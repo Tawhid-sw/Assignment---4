@@ -1,0 +1,43 @@
+{
+  "include": ["**/*.ts"],
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    "module": "ESNext",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "moduleResolution": "bundler",
+
+    "ignoreDeprecations": "6.0",
+    "baseUrl": "./sc",
+    "paths": {
+      "@/*": ["*"]
+    },
+
+    "types": [
+      "node",
+      "express",
+      "cors",
+      "cookie-parser",
+      "bcrypt",
+      "jsonwebtoken"
+    ],
+
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    "allowImportingTsExtensions": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true
+  }
+}
