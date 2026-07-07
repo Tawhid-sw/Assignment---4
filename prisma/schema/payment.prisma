@@ -1,0 +1,23 @@
+model Payment {
+  id            String    @id @default(uuid())
+  transactionId String?   @unique
+  gatewayRef    String?
+
+  amount   Decimal         @db.Decimal(10, 2)
+  provider PaymentProvider
+  method   PaymentMethod
+
+  status PaymentStatus @default(PENDING)
+  paidAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation("PaymentHistory", fields: [userId], references: [id])
+
+  rentalOrderId String      @unique
+  rentalOrder   RentalOrder @relation(fields: [rentalOrderId], references: [id])
+
+  @@map("payments")
+}
