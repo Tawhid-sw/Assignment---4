@@ -1,6 +1,7 @@
 model category {
   id          String   @id @default(uuid())
   name        String   @unique
+  slug        String   @unique
   description String?
   imageUrl    String?
   createdAt   DateTime @default(now())

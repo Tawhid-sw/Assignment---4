@@ -83,20 +83,30 @@ async function main() {
   // 3. Categories
   // ─────────────────────────────────────────────
   const cycling = await prisma.category.create({
-    data: { name: "Cycling", description: "Bikes and cycling accessories" },
+    data: {
+      name: "Cycling",
+      slug: "cycling",
+      description: "Bikes and cycling accessories",
+    },
   });
   const camping = await prisma.category.create({
     data: {
       name: "Camping",
+      slug: "camping",
       description: "Tents, sleeping bags, and camp gear",
     },
   });
   const fitness = await prisma.category.create({
-    data: { name: "Fitness", description: "Gym and workout equipment" },
+    data: {
+      name: "Fitness",
+      slug: "fitness",
+      description: "Gym and workout equipment",
+    },
   });
   const waterSports = await prisma.category.create({
     data: {
       name: "Water Sports",
+      slug: "water-sports",
       description: "Kayaks, paddleboards, and more",
     },
   });
