@@ -5,8 +5,21 @@ import { sendResponse } from "@/src/utils/sendResponse";
 import httpStatus from "http-status";
 import { config } from "@/src/config";
 import { jwt_utils } from "@/src/utils/jwt";
+import { Role } from "@/generated/prisma/enums";
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
+  const { role } = req.body;
+
+  // Block ADMIN role at controller
+  if (role === Role.ADMIN) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: httpStatus.FORBIDDEN,
+      message: "You are not allowed to register as ADMIN",
+      data: null,
+    });
+  }
+
   const user = await authService.register(req.body);
   sendResponse(res, {
     success: true,
