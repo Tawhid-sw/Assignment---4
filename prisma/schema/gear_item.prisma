@@ -1,7 +1,7 @@
 model gearItem {
   id            String   @id @default(uuid())
   name          String
-  description   String
+  description   String?
   brand         String
   pricePerDay   Decimal  @db.Decimal(10, 2)
   stockQuantity Int      @default(1)

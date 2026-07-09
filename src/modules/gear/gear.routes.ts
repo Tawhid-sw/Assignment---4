@@ -1,0 +1,37 @@
+import express from "express";
+import { gearController } from "./gear.controller";
+import { auth } from "@/src/middlewares/auth.middleware";
+import { Role } from "@/generated/prisma/enums";
+
+const gearRouter = express.Router();
+
+// Public routes
+gearRouter.get("/", gearController.allGear);
+gearRouter.get("/:id", gearController.gearById);
+
+// Provider routes
+gearRouter.post(
+  "/create-new-gear",
+  auth(Role.PROVIDER),
+  gearController.createGear,
+);
+
+gearRouter.put(
+  "/update-gear/:id",
+  auth(Role.PROVIDER),
+  gearController.updateGear,
+);
+
+gearRouter.delete(
+  "/delete-gear/:id",
+  auth(Role.PROVIDER),
+  gearController.deleteGear,
+);
+
+gearRouter.get(
+  "/provider-inventory",
+  auth(Role.PROVIDER),
+  gearController.providerInventory,
+);
+
+export default gearRouter;
