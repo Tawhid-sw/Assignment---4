@@ -33,8 +33,7 @@ export const auth = (...requiredRoles: Role[]) => {
       return sendResponse(res, {
         success: false,
         statusCode: httpStatus.UNAUTHORIZED,
-        message:
-          "You are not logged in. Please log in to access this resource.",
+        message: "You are not logged in. Please log in to access this route.",
         data: null,
       });
     }
@@ -60,8 +59,7 @@ export const auth = (...requiredRoles: Role[]) => {
       return sendResponse(res, {
         success: false,
         statusCode: httpStatus.FORBIDDEN,
-        message:
-          "Forbidden. You don't have permission to access this resource.",
+        message: "Forbidden. You don't have permission to access this route.",
         data: null,
       });
     }
@@ -88,7 +86,7 @@ export const auth = (...requiredRoles: Role[]) => {
       return sendResponse(res, {
         success: false,
         statusCode: httpStatus.LOCKED,
-        message: "Your account has been blocked. Please contact support.",
+        message: "Your account has been suspended. Please contact support.",
         data: null,
       });
     }

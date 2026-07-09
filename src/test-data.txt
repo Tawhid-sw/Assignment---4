@@ -1,0 +1,30 @@
+{
+  "success": true,
+  "statusCode": 201,
+  "message": "User registered successfully",
+  "data": {
+    "id": "6a5d4bdc-4982-41ef-8a82-9f8ebf61c0d0",
+    "name": "Tawhid",
+    "email": "t@gmail.com",
+    "password": "$2b$08$Cp8WM23q5XVvhh/ZltOg8uFsLIwFJGGQDq/I.nrRr0mEvbTbJhCGS",
+    "avatarUrl": null,
+    "role": "CUSTOMER",
+    "status": "ACTIVE",
+    "createdAt": "2026-07-08T21:07:34.710Z",
+    "updatedAt": "2026-07-08T21:07:34.710Z"
+  }
+},
+
+// ADMIN
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "User logged in successfully",
+  "data": {
+    
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE1ZjM2YjFiLTBiZDEtNDZlMy04YTVkLWIzNDJiNmQwNmM2ZCIsImVtYWlsIjoiYWRtaW5AZ2VhcnVwLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc4MzU5OTY5OSwiZXhwIjoxNzgzNjg2MDk5fQ.wSqVAkdv3u9meZsbyt6TITB83Ix0QMk-l3zG50y5Zt8",
+
+
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE1ZjM2YjFiLTBiZDEtNDZlMy04YTVkLWIzNDJiNmQwNmM2ZCIsImVtYWlsIjoiYWRtaW5AZ2VhcnVwLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc4MzU5OTY5OSwiZXhwIjoxNzg0MjA0NDk5fQ.KIUxCCO0dVjc02qbCy3NAA19jNmaJWcePJcF5TgKvtk"
+  }
+}
