@@ -1,4 +1,4 @@
-model RentalOrder {
+model rentalOrder {
   id          String      @id @default(uuid())
   status      OrderStatus @default(PLACED)
   startDate   DateTime
@@ -9,13 +9,13 @@ model RentalOrder {
   updatedAt DateTime @updatedAt
 
   customerId String
-  customer   User   @relation("CustomerRentalOrders", fields: [customerId], references: [id])
+  customer   user   @relation("CustomerRentalOrders", fields: [customerId], references: [id])
 
   providerId String
-  provider   User   @relation("ProviderRentalOrders", fields: [providerId], references: [id])
+  provider   user   @relation("ProviderRentalOrders", fields: [providerId], references: [id])
 
-  rentalItems RentalItem[]
-  payment     Payment?
+  rentalItems rentalItem[]
+  payment     payment?
 
   @@map("rental_orders")
 }

@@ -1,4 +1,4 @@
-model Category {
+model category {
   id          String   @id @default(uuid())
   name        String   @unique
   description String?
@@ -6,7 +6,7 @@ model Category {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  gearItems GearItem[]
+  gearItems gearItem[]
 
   @@map("categories")
 }

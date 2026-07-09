@@ -1,5 +1,5 @@
-model Review {
-  id      String @id @default(uuid())
+model review {
+  id      String  @id @default(uuid())
   rating  Int
   comment String?
 
@@ -7,10 +7,10 @@ model Review {
   updatedAt DateTime @updatedAt
 
   customerId String
-  customer   User     @relation("CustomerReviews", fields: [customerId], references: [id])
+  customer   user   @relation("CustomerReviews", fields: [customerId], references: [id])
 
   gearItemId String
-  gearItem   GearItem @relation(fields: [gearItemId], references: [id])
+  gearItem   gearItem @relation(fields: [gearItemId], references: [id])
 
   @@unique([customerId, gearItemId])
   @@map("reviews")

@@ -1,43 +1,24 @@
 {
-  "include": ["src/**/*.ts", "generated/prisma/**/*.ts"],
   "compilerOptions": {
-    "rootDir": "./src",
     "outDir": "./dist",
-
     "module": "ESNext",
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "moduleResolution": "bundler",
-
-    "ignoreDeprecations": "6.0",
-    "baseUrl": "./sc",
-    "paths": {
-      "@/*": ["*"]
-    },
-
-    "types": [
-      "node",
-      "express",
-      "cors",
-      "cookie-parser",
-      "bcrypt",
-      "jsonwebtoken"
-    ],
-
+    "target": "ES2023",
+    "types": ["node"],
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
-
-    "allowImportingTsExtensions": true,
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-
     "strict": true,
-    "verbatimModuleSyntax": true,
-    "noEmit": true,
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["*"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
 }

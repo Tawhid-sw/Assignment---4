@@ -1,4 +1,4 @@
-model GearItem {
+model gearItem {
   id            String   @id @default(uuid())
   name          String
   description   String
@@ -11,13 +11,13 @@ model GearItem {
   updatedAt     DateTime @updatedAt
 
   providerId String
-  provider   User     @relation("ProviderGearItems", fields: [providerId], references: [id])
+  provider   user   @relation("ProviderGearItems", fields: [providerId], references: [id])
 
   categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
+  category   category @relation(fields: [categoryId], references: [id])
 
-  rentalItems RentalItem[]
-  reviews     Review[]
+  rentalItems rentalItem[]
+  reviews     review[]
 
   @@map("gear_items")
 }
