@@ -3,9 +3,17 @@ import type { JwtPayload } from "jsonwebtoken";
 import { config } from "@/src/config";
 import { jwt_utils } from "@/src/utils/jwt";
 import { prisma } from "@/src/lib/prisma";
-import type { user } from "@/generated/prisma/client";
+import type { Role, user } from "@/generated/prisma/client";
 
-const register = async (payload: user) => {
+type UserRoleWithoutAdmin = Exclude<Role, "ADMIN">;
+type RegisterPayload = Omit<
+  user,
+  "id" | "createdAt" | "updatedAt" | "status" | "role"
+> & {
+  role: UserRoleWithoutAdmin;
+};
+
+const register = async (payload: RegisterPayload) => {
   const { name, email, password, avatarUrl, role } = payload;
 
   const isUserExists = await prisma.user.findUnique({
