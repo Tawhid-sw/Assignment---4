@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 import type { gearItem } from "@/generated/prisma/client";
 import { catchAsync } from "@/src/utils/catchAsync";
@@ -48,7 +48,7 @@ const gearById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const createGear = catchAsync(async (req: Request, res: Response) => {
-  const providerId = req.cookies.providerId;
+  const providerId = req.user?.id;
   if (!providerId) {
     return sendResponse(res, {
       success: false,
@@ -103,7 +103,7 @@ const createGear = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateGear = catchAsync(async (req: Request, res: Response) => {
-  const providerId = req.cookies.providerId;
+  const providerId = req.user?.id;
   if (!providerId) {
     return sendResponse(res, {
       success: false,
@@ -136,7 +136,7 @@ const updateGear = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteGear = catchAsync(async (req: Request, res: Response) => {
-  const providerId = req.cookies.providerId;
+  const providerId = req.user?.id;
   if (!providerId) {
     return sendResponse(res, {
       success: false,
@@ -166,26 +166,28 @@ const deleteGear = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const providerInventory = catchAsync(async (req: Request, res: Response) => {
-  const providerId = req.cookies.providerId;
-  if (!providerId) {
-    return sendResponse(res, {
-      success: false,
-      statusCode: httpStatus.UNAUTHORIZED,
-      message: "Provider id missing",
-      data: null,
+const providerInventory = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const providerId = req.user?.id;
+    if (!providerId) {
+      return sendResponse(res, {
+        success: false,
+        statusCode: httpStatus.UNAUTHORIZED,
+        message: "Provider id missing",
+        data: null,
+      });
+    }
+
+    const inventory = await gearService.providerInventory(providerId);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Provider inventory retrieved successfully",
+      data: inventory,
     });
-  }
-
-  const inventory = await gearService.providerInventory(providerId);
-
-  sendResponse(res, {
-    success: true,
-    statusCode: httpStatus.OK,
-    message: "Provider inventory retrieved successfully",
-    data: inventory,
-  });
-});
+  },
+);
 
 export const gearController = {
   allGear,

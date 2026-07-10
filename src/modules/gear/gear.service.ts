@@ -123,6 +123,22 @@ const newGear = async (
     throw new Error("Category not found");
   }
 
+  const existingGear = await prisma.gearItem.findFirst({
+    where: {
+      providerId,
+      name: { equals: name, mode: "insensitive" },
+      brand: { equals: brand, mode: "insensitive" },
+      categoryId: category.id,
+    },
+  });
+
+  if (existingGear) {
+    throw new Error(
+      `You already have a listing for "${name}" (${brand}) in this category. 
+      Update its stockQuantity instead of creating a duplicate.`,
+    );
+  }
+
   const newGear = await prisma.gearItem.create({
     data: {
       name,

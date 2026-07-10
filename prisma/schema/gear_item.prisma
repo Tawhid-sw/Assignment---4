@@ -19,5 +19,6 @@ model gearItem {
   rentalItems rentalItem[]
   reviews     review[]
 
+  @@unique([providerId, name, brand, categoryId])
   @@map("gear_items")
 }

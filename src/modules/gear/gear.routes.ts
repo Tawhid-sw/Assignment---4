@@ -7,9 +7,15 @@ const gearRouter = express.Router();
 
 // Public routes
 gearRouter.get("/", gearController.allGear);
-gearRouter.get("/:id", gearController.gearById);
 
 // Provider routes
+
+gearRouter.get(
+  "/provider-inventory",
+  auth(Role.PROVIDER),
+  gearController.providerInventory,
+);
+
 gearRouter.post(
   "/create-new-gear",
   auth(Role.PROVIDER),
@@ -28,10 +34,6 @@ gearRouter.delete(
   gearController.deleteGear,
 );
 
-gearRouter.get(
-  "/provider-inventory",
-  auth(Role.PROVIDER),
-  gearController.providerInventory,
-);
+gearRouter.get("/:id", gearController.gearById);
 
 export default gearRouter;
