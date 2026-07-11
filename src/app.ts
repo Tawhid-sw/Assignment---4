@@ -7,6 +7,8 @@ import cors from "cors";
 import { config } from "./config";
 import categoryRouter from "./modules/category/category.routes";
 import gearRouter from "./modules/gear/gear.routes";
+import rentalRouter from "./modules/rental/rental.routes";
+import providerOrderRouter from "./modules/rental/provider-order.routes";
 
 const app: Application = express();
 
@@ -28,6 +30,8 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRouter);
 app.use("/api/category", categoryRouter);
 app.use("/api/gear", gearRouter);
+app.use("/api/rentals", rentalRouter);
+app.use("/api/provider/orders", providerOrderRouter);
 
 app.use(notFound);
 
