@@ -20,6 +20,8 @@ app.use(
   }),
 );
 
+app.use("/api/payments/confirm", express.raw({ type: "application/json" }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -33,11 +35,9 @@ app.use("/api/category", categoryRouter);
 app.use("/api/gear", gearRouter);
 app.use("/api/rentals", rentalRouter);
 app.use("/api/provider/orders", providerOrderRouter);
-app.use("/api/payments/confirm", express.raw({ type: "application/json" }));
 app.use("/api/payments", paymentRouter);
 
 app.use(notFound);
-
 app.use(globalErrorHandler);
 
 export default app;

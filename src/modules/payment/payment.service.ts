@@ -24,6 +24,10 @@ const createPayment = async (rentalOrderId: string, customerId: string) => {
   const paymentIntent = await stripe.paymentIntents.create({
     amount: amountInCents,
     currency: "usd",
+    automatic_payment_methods: {
+      enabled: true,
+      allow_redirects: "never",
+    },
     metadata: {
       rentalOrderId: order.id,
       customerId: customerId,
