@@ -9,6 +9,7 @@ import categoryRouter from "./modules/category/category.routes";
 import gearRouter from "./modules/gear/gear.routes";
 import rentalRouter from "./modules/rental/rental.routes";
 import providerOrderRouter from "./modules/rental/provider-order.routes";
+import paymentRouter from "./modules/payment/payment.routes";
 
 const app: Application = express();
 
@@ -32,6 +33,8 @@ app.use("/api/category", categoryRouter);
 app.use("/api/gear", gearRouter);
 app.use("/api/rentals", rentalRouter);
 app.use("/api/provider/orders", providerOrderRouter);
+app.use("/api/payments/confirm", express.raw({ type: "application/json" }));
+app.use("/api/payments", paymentRouter);
 
 app.use(notFound);
 
