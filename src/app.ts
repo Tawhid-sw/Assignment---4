@@ -10,6 +10,7 @@ import gearRouter from "./modules/gear/gear.routes";
 import rentalRouter from "./modules/rental/rental.routes";
 import providerOrderRouter from "./modules/rental/provider-order.routes";
 import paymentRouter from "./modules/payment/payment.routes";
+import reviewRouter from "./modules/review/review.routes";
 
 const app: Application = express();
 
@@ -36,6 +37,7 @@ app.use("/api/gear", gearRouter);
 app.use("/api/rentals", rentalRouter);
 app.use("/api/provider/orders", providerOrderRouter);
 app.use("/api/payments", paymentRouter);
+app.use("/api/reviews", reviewRouter);
 
 app.use(notFound);
 app.use(globalErrorHandler);
