@@ -33,7 +33,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRouter);
-app.use("/api/categorys", categoryRouter);
+app.use("/api/categories", categoryRouter);
 app.use("/api/gear", gearRouter);
 app.use("/api/rentals", rentalRouter);
 app.use("/api/provider/orders", providerOrderRouter);
