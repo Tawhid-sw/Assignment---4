@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 
-export const validateUserStatusUpdate = (
+const validateUserStatusUpdate = (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -17,4 +17,8 @@ export const validateUserStatusUpdate = (
   }
 
   next();
+};
+
+export const adminValidation = {
+  validateUserStatusUpdate,
 };

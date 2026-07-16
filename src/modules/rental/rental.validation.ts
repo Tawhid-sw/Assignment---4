@@ -96,4 +96,7 @@ const validateStatusUpdate = (
   next();
 };
 
-export { validateCreateRental, validateStatusUpdate };
+export const rentalValidation = {
+  validateCreateRental,
+  validateStatusUpdate,
+};

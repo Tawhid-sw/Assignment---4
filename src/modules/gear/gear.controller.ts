@@ -4,7 +4,7 @@ import type { gearItem } from "@/generated/prisma/client";
 import { catchAsync } from "@/src/utils/catchAsync";
 import { sendResponse } from "@/src/utils/sendResponse";
 import { gearService } from "./gear.service";
-import { validateGearQuery } from "./gear.validation";
+import { gearValidation } from "./gear.validation";
 
 type GearBody = Omit<
   gearItem,
@@ -14,7 +14,7 @@ type GearBody = Omit<
 };
 
 const allGear = catchAsync(async (req: Request, res: Response) => {
-  const safe = validateGearQuery(req);
+  const safe = gearValidation.validateGearQuery(req);
   const gearItems = await gearService.allGear(safe);
 
   sendResponse(res, {

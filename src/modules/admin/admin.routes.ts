@@ -2,7 +2,7 @@ import express from "express";
 import { auth } from "@/src/middlewares/auth.middleware";
 import { Role } from "@/generated/prisma/enums";
 import { adminController } from "./admin.controller";
-import { validateUserStatusUpdate } from "./admin.validation";
+import { adminValidation } from "./admin.validation";
 
 const adminRouter = express.Router();
 
@@ -10,7 +10,7 @@ adminRouter.get("/users", auth(Role.ADMIN), adminController.getAllUsers);
 adminRouter.patch(
   "/users/:id",
   auth(Role.ADMIN),
-  validateUserStatusUpdate,
+  adminValidation.validateUserStatusUpdate,
   adminController.updateUserStatus,
 );
 adminRouter.get("/gear", auth(Role.ADMIN), adminController.getAllGear);

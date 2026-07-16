@@ -2,12 +2,14 @@ import express from "express";
 import { auth } from "@/src/middlewares/auth.middleware";
 import { Role } from "@/generated/prisma/enums";
 import { paymentController } from "./payment.controller";
+import { paymentValidation } from "./payment.validation";
 
 const paymentRouter = express.Router();
 
 paymentRouter.post(
   "/create",
   auth(Role.CUSTOMER),
+  paymentValidation.validateCreatePayment,
   paymentController.createPayment,
 );
 

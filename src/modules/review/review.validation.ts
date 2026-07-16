@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 
-export const validateCreateReview = (
+const validateCreateReview = (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -32,4 +32,8 @@ export const validateCreateReview = (
   }
 
   next();
+};
+
+export const reviewValidation = {
+  validateCreateReview,
 };

@@ -2,14 +2,14 @@ import express from "express";
 import { auth } from "@/src/middlewares/auth.middleware";
 import { Role } from "@/generated/prisma/enums";
 import { rentalController } from "./rental.controller";
-import { validateCreateRental } from "./rental.validation";
+import { rentalValidation } from "./rental.validation";
 
 const rentalRouter = express.Router();
 
 rentalRouter.post(
   "/",
   auth(Role.CUSTOMER),
-  validateCreateRental,
+  rentalValidation.validateCreateRental,
   rentalController.createRental,
 );
 
