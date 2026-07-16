@@ -1,4 +1,4 @@
-import type { rentalOrder } from "@/generated/prisma/client";
+import type { rentalOrder, OrderStatus } from "@/generated/prisma/client";
 import { prisma } from "@/src/lib/prisma";
 
 type RentalItemInput = {
@@ -150,7 +150,7 @@ const getProviderOrders = async (providerId: string) => {
 const updateOrderStatus = async (
   orderId: string,
   providerId: string,
-  newStatus: string,
+  newStatus: OrderStatus,
 ) => {
   const order = await prisma.rentalOrder.findUnique({
     where: { id: orderId },
@@ -176,7 +176,7 @@ const updateOrderStatus = async (
 
   const updatedOrder = await prisma.rentalOrder.update({
     where: { id: orderId },
-    data: { status: newStatus as any },
+    data: { status: newStatus },
   });
 
   return updatedOrder;

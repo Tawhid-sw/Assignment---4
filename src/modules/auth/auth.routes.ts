@@ -11,7 +11,11 @@ authRouter.post("/login", authController.loginUser);
 
 authRouter.post("/refresh-token", authController.userRefreshToken);
 
-authRouter.get("/profile", auth(Role.ADMIN), authController.profile);
+authRouter.get(
+  "/profile",
+  auth(Role.CUSTOMER, Role.PROVIDER, Role.ADMIN),
+  authController.profile,
+);
 
 authRouter.put(
   "/update-profile",

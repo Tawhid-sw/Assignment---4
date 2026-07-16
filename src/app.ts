@@ -11,6 +11,7 @@ import rentalRouter from "./modules/rental/rental.routes";
 import providerOrderRouter from "./modules/rental/provider-order.routes";
 import paymentRouter from "./modules/payment/payment.routes";
 import reviewRouter from "./modules/review/review.routes";
+import adminRouter from "./modules/admin/admin.routes";
 
 const app: Application = express();
 
@@ -32,12 +33,13 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRouter);
-app.use("/api/category", categoryRouter);
+app.use("/api/categorys", categoryRouter);
 app.use("/api/gear", gearRouter);
 app.use("/api/rentals", rentalRouter);
 app.use("/api/provider/orders", providerOrderRouter);
 app.use("/api/payments", paymentRouter);
 app.use("/api/reviews", reviewRouter);
+app.use("/api/admin", adminRouter);
 
 app.use(notFound);
 app.use(globalErrorHandler);

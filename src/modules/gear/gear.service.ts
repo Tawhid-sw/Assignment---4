@@ -134,12 +134,11 @@ const newGear = async (
 
   if (existingGear) {
     throw new Error(
-      `You already have a listing for "${name}" (${brand}) in this category. 
-      Update its stockQuantity instead of creating a duplicate.`,
+      `You already have a listing for "${name}" (${brand}) in this category. Update its stockQuantity instead of creating a duplicate.`,
     );
   }
 
-  const newGear = await prisma.gearItem.create({
+  const newGearItem = await prisma.gearItem.create({
     data: {
       name,
       description,
@@ -153,7 +152,7 @@ const newGear = async (
     },
   });
 
-  return newGear;
+  return newGearItem;
 };
 
 const updateGear = async (
