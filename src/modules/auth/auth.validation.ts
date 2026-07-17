@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { Role } from "@/generated/prisma/enums";
+import { Role } from "../../../generated/prisma/enums";
 
 const validateRegister = (req: Request, res: Response, next: NextFunction) => {
   const { name, email, password, role } = req.body;

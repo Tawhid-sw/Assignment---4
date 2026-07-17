@@ -1,9 +1,9 @@
 import bcrypt from "bcrypt";
 import type { JwtPayload } from "jsonwebtoken";
-import { config } from "@/src/config";
-import { jwt_utils } from "@/src/utils/jwt";
-import { prisma } from "@/src/lib/prisma";
-import type { user } from "@/generated/prisma/client";
+import { config } from "../../config";
+import { jwt_utils } from "../../utils/jwt";
+import { prisma } from "../../lib/prisma";
+import type { user } from "../../../generated/prisma/client";
 
 const register = async (payload: user) => {
   // Double protection

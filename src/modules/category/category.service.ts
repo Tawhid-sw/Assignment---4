@@ -1,5 +1,5 @@
-import type { category } from "@/generated/prisma/client";
-import { prisma } from "@/src/lib/prisma";
+import type { category } from "../../../generated/prisma/client";
+import { prisma } from "../../lib/prisma";
 
 const getAllCategorys = async () => {
   const Categorys = await prisma.category.findMany({});

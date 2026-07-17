@@ -1,4 +1,4 @@
-import { prisma } from "@/src/lib/prisma";
+import { prisma } from "../../lib/prisma";
 
 const getReviewsForGear = async (gearItemId: string) => {
   return prisma.review.findMany({

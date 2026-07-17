@@ -1,6 +1,6 @@
 import express from "express";
-import { auth } from "@/src/middlewares/auth.middleware";
-import { Role } from "@/generated/prisma/enums";
+import { auth } from "../../middlewares/auth.middleware";
+import { Role } from "../../../generated/prisma/enums";
 import { paymentController } from "./payment.controller";
 import { paymentValidation } from "./payment.validation";
 

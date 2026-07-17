@@ -1,9 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
 import httpStatus from "http-status";
-import type { category } from "@/generated/prisma/client";
+import type { category } from "../../../generated/prisma/client";
 import { categoryService } from "./category.service";
-import { catchAsync } from "@/src/utils/catchAsync";
-import { sendResponse } from "@/src/utils/sendResponse";
+import { catchAsync } from "../../utils/catchAsync";
+import { sendResponse } from "../../utils/sendResponse";
 
 const allCategorys = catchAsync(
   async (req: Request, res: Response): Promise<void> => {

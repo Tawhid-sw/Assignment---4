@@ -1,5 +1,5 @@
-import type { gearItem, Prisma } from "@/generated/prisma/client";
-import { prisma } from "@/src/lib/prisma";
+import type { gearItem, Prisma } from "../../../generated/prisma/client";
+import { prisma } from "../../lib/prisma";
 
 type GearQuery = {
   searchTerm?: string;

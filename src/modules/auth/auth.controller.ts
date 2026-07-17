@@ -1,11 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import { authService } from "./auth.service";
-import { catchAsync } from "@/src/utils/catchAsync";
-import { sendResponse } from "@/src/utils/sendResponse";
+import { catchAsync } from "../../utils/catchAsync";
+import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
-import { config } from "@/src/config";
-import { jwt_utils } from "@/src/utils/jwt";
-import { Role } from "@/generated/prisma/enums";
 
 const registerUser = catchAsync(
   async (req: Request, res: Response): Promise<void> => {

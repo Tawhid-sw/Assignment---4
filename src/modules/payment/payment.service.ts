@@ -1,5 +1,5 @@
-import { prisma } from "@/src/lib/prisma";
-import { stripe } from "@/src/lib/stripe";
+import { prisma } from "../../lib/prisma";
+import { stripe } from "../../lib/stripe";
 
 const createPayment = async (rentalOrderId: string, customerId: string) => {
   const order = await prisma.rentalOrder.findFirst({

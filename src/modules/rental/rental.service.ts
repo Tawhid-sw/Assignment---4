@@ -1,5 +1,8 @@
-import type { rentalOrder, OrderStatus } from "@/generated/prisma/client";
 import { prisma } from "../../lib/prisma";
+import type {
+  rentalOrder,
+  OrderStatus,
+} from "../../../generated/prisma/client";
 
 type RentalItemInput = {
   gearItemId: string;

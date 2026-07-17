@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
-import type { gearItem } from "@/generated/prisma/client";
-import { catchAsync } from "@/src/utils/catchAsync";
-import { sendResponse } from "@/src/utils/sendResponse";
+import type { gearItem } from "../../../generated/prisma/client";
+import { catchAsync } from "../../utils/catchAsync";
+import { sendResponse } from "../../utils/sendResponse";
 import { gearService } from "./gear.service";
 import { gearValidation } from "./gear.validation";
 

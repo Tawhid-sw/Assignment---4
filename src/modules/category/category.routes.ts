@@ -1,7 +1,7 @@
 import express from "express";
 import { categoryController } from "./category.controller";
-import { auth } from "@/src/middlewares/auth.middleware";
-import { Role } from "@/generated/prisma/enums";
+import { auth } from "../../middlewares/auth.middleware";
+import { Role } from "../../../generated/prisma/enums";
 import { categoryValidation } from "./category.validation";
 
 const categoryRouter = express.Router();

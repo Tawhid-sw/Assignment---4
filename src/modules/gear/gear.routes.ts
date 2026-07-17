@@ -1,8 +1,8 @@
 import express from "express";
-import { gearController } from "./gear.controller";
-import { auth } from "@/src/middlewares/auth.middleware";
-import { Role } from "@/generated/prisma/enums";
+import { Role } from "../../../generated/prisma/enums";
+import { auth } from "../../middlewares/auth.middleware";
 import { gearValidation } from "./gear.validation";
+import { gearController } from "./gear.controller";
 
 const gearRouter = express.Router();
 
