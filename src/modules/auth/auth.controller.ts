@@ -9,18 +9,6 @@ import { Role } from "@/generated/prisma/enums";
 
 const registerUser = catchAsync(
   async (req: Request, res: Response): Promise<void> => {
-    const { role } = req.body;
-
-    // Block ADMIN role at controller
-    if (role === Role.ADMIN) {
-      return sendResponse(res, {
-        success: false,
-        statusCode: httpStatus.FORBIDDEN,
-        message: "You are not allowed to register as ADMIN",
-        data: null,
-      });
-    }
-
     const user = await authService.register(req.body);
     sendResponse(res, {
       success: true,
@@ -33,27 +21,26 @@ const registerUser = catchAsync(
 
 const loginUser = catchAsync(
   async (req: Request, res: Response): Promise<void> => {
-    const user = await authService.login(req.body);
-
-    const { accessToken, refreshToken } = (await authService.login(
+    const { accessToken, refreshToken, ...user } = (await authService.login(
       req.body,
     )) as {
       accessToken: string;
       refreshToken: string;
+      [key: string]: unknown;
     };
 
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: false,
+      secure: true,
       sameSite: "none",
-      maxAge: 1000 * 60 * 60 * 24, // 24 hour or 1 day
+      maxAge: 1000 * 60 * 60 * 24,
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: false,
       sameSite: "none",
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 day
+      maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
     sendResponse(res, {
@@ -91,17 +78,11 @@ const userRefreshToken = catchAsync(
 
 const profile = catchAsync(
   async (req: Request, res: Response): Promise<void> => {
-    const accessToken = req.cookies.accessToken;
-    if (!accessToken) throw new Error("Access token missing");
+    const email = req.user?.email;
 
-    const token = jwt_utils.verifyToken(
-      accessToken,
-      config.JWT_ACCESS_SECRET as string,
-    );
-    if (!token.success) throw new Error(token.error);
-
-    const { email } = token.data as { email?: string };
-    if (!email) throw new Error("User email not found");
+    if (!email) {
+      throw new Error("Not authenticated");
+    }
 
     const user = await authService.profile(email);
     sendResponse(res, {
@@ -115,17 +96,11 @@ const profile = catchAsync(
 
 const updateProfile = catchAsync(
   async (req: Request, res: Response): Promise<void> => {
-    const accessToken = req.cookies.accessToken;
-    if (!accessToken) throw new Error("Access token missing");
+    const email = req.user?.email;
 
-    const token = jwt_utils.verifyToken(
-      accessToken,
-      config.JWT_ACCESS_SECRET as string,
-    );
-    if (!token.success) throw new Error(token.error);
-
-    const { email } = token.data as { email?: string };
-    if (!email) throw new Error("User email not found");
+    if (!email) {
+      throw new Error("Not authenticated");
+    }
 
     const { name, avatarUrl } = req.body;
 
@@ -143,7 +118,6 @@ const updateProfile = catchAsync(
     });
   },
 );
-
 export const authController = {
   registerUser,
   loginUser,

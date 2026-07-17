@@ -13,6 +13,11 @@ import paymentRouter from "./modules/payment/payment.routes";
 import reviewRouter from "./modules/review/review.routes";
 import adminRouter from "./modules/admin/admin.routes";
 
+import swaggerUi from "swagger-ui-express";
+import { load } from "js-yaml";
+import fs from "fs";
+import path from "path";
+
 const app: Application = express();
 
 app.use(
@@ -23,6 +28,12 @@ app.use(
 );
 
 app.use("/api/payments/confirm", express.raw({ type: "application/json" }));
+
+const swaggerDocument = load(
+  fs.readFileSync(path.join(__dirname, "../../api-docs.yaml"), "utf8"),
+) as object;
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
