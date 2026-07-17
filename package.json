@@ -2,10 +2,10 @@
   "name": "assignment-4",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "prisma generate && prisma migrate deploy && tsc",
+    "build": "prisma generate && tsc && tsc-alias",
     "start": "node dist/server.js"
   },
   "prisma": {
@@ -14,7 +14,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "devDependencies": {
     "@biomejs/biome": "2.5.3",
     "@types/bcrypt": "^6.0.0",
@@ -34,6 +33,7 @@
     "http-status": "^2.1.0",
     "jsonwebtoken": "^9.0.3",
     "prisma": "^7.8.0",
+    "tsc-alias": "^1.9.1",
     "tsx": "^4.23.0",
     "typescript": "^6.0.3"
   },

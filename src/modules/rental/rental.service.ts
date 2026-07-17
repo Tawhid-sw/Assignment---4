@@ -1,5 +1,5 @@
 import type { rentalOrder, OrderStatus } from "@/generated/prisma/client";
-import { prisma } from "@/src/lib/prisma";
+import { prisma } from "../../lib/prisma";
 
 type RentalItemInput = {
   gearItemId: string;
@@ -53,7 +53,7 @@ const createRental = async (
     throw new Error("One or more gear items do not exist");
   }
 
-  const providerId = gearItems[0]!.providerId;
+  const providerId = gearItems[0]?.providerId;
   for (const gear of gearItems) {
     if (gear.providerId !== providerId) {
       throw new Error("All items in one order must be from the same provider");
@@ -204,7 +204,7 @@ const returnAndReview = async (
     throw new Error("Rental order not found");
   }
 
-  if (!order.payment || order.payment.status !== "COMPLETED") {
+  if (order.payment?.status !== "COMPLETED") {
     throw new Error("Order must be paid before it can be returned");
   }
 
