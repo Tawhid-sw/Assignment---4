@@ -12,7 +12,7 @@ info:
 servers:
   - url: http://localhost:3000
     description: Development server
-  - url: https://assignment-4-cvehc6onx-tawhids-projects-8ef81b1e.vercel.app/
+  - url: https://assignment-4-theta-henna.vercel.app/
     description: Production server
 
 components:
