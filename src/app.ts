@@ -1,4 +1,8 @@
-import express, { type Application } from "express";
+import express, {
+  type Application,
+  type Request,
+  type Response,
+} from "express";
 import cookieParser from "cookie-parser";
 import authRouter from "./modules/auth/auth.routes";
 import { globalErrorHandler } from "./middlewares/globalErrorHandler";
@@ -13,7 +17,6 @@ import paymentRouter from "./modules/payment/payment.routes";
 import reviewRouter from "./modules/review/review.routes";
 import adminRouter from "./modules/admin/admin.routes";
 
-import swaggerUi from "swagger-ui-express";
 import { load } from "js-yaml";
 import fs from "fs";
 import path from "path";
@@ -29,11 +32,49 @@ app.use(
 
 app.use("/api/payments/confirm", express.raw({ type: "application/json" }));
 
+// Load API spec
 const swaggerDocument = load(
   fs.readFileSync(path.join(process.cwd(), "api-docs.yaml"), "utf8"),
 ) as object;
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// Serve spec as JSON endpoint
+app.get("/api-docs.json", (req: Request, res: Response) => {
+  res.json(swaggerDocument);
+});
+
+// Serve Swagger UI with CDN assets
+app.get("/api-docs", (req: Request, res: Response) => {
+  res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GearUp API Documentation</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui.css">
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui-bundle.js"></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.onload = function() {
+      SwaggerUIBundle({
+        url: "/api-docs.json",
+        dom_id: "#swagger-ui",
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [SwaggerUIBundle.plugins.DownloadUrl],
+        layout: "StandaloneLayout"
+      });
+    };
+  </script>
+</body>
+</html>
+  `);
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
