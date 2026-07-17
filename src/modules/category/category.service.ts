@@ -52,8 +52,15 @@ const updateCategory = async (id: string, payload: Partial<category>) => {
     throw new Error("Category not found");
   }
 
-  if (!existingCategory) {
-    throw new Error("Category not found");
+  const hasChanges =
+    (name !== undefined && name !== existingCategory.name) ||
+    (slug !== undefined && slug !== existingCategory.slug) ||
+    (description !== undefined &&
+      description !== existingCategory.description) ||
+    (imageUrl !== undefined && imageUrl !== existingCategory.imageUrl);
+
+  if (!hasChanges) {
+    throw new Error("No changes detected");
   }
 
   const updatedCategory = await prisma.category.update({

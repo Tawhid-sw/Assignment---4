@@ -18,7 +18,7 @@ categoryRouter.post(
 );
 
 categoryRouter.put(
-  "/update-new-category/:id",
+  "/update-category/:id",
   auth(Role.ADMIN),
   categoryValidation.validateCategoryId,
   categoryValidation.validateUpdateCategory,
@@ -26,7 +26,7 @@ categoryRouter.put(
 );
 
 categoryRouter.delete(
-  "/delete-new-category/:id",
+  "/delete-category/:id",
   auth(Role.ADMIN),
   categoryValidation.validateCategoryId,
   categoryController.deleteCategory,
