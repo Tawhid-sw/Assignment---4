@@ -30,7 +30,7 @@ app.use(
 app.use("/api/payments/confirm", express.raw({ type: "application/json" }));
 
 const swaggerDocument = load(
-  fs.readFileSync(path.join(__dirname, "../../api-docs.yaml"), "utf8"),
+  fs.readFileSync(path.join(process.cwd(), "api-docs.yaml"), "utf8"),
 ) as object;
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
