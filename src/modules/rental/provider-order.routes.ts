@@ -19,4 +19,10 @@ providerOrderRouter.patch(
   rentalController.updateOrderStatus,
 );
 
+providerOrderRouter.patch(
+  "/:id/pickup",
+  auth(Role.PROVIDER),
+  rentalController.updateOrderStatus,
+);
+
 export default providerOrderRouter;

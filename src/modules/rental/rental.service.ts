@@ -182,10 +182,58 @@ const updateOrderStatus = async (
   return updatedOrder;
 };
 
+const markOrderAsReturned = async (orderId: string, customerId: string) => {
+  const order = await prisma.rentalOrder.findFirst({
+    where: { id: orderId, customerId },
+  });
+
+  if (!order) {
+    throw new Error("Rental order not found");
+  }
+
+  const allowedNextSteps = ALLOWED_TRANSITIONS[order.status] || [];
+
+  if (!allowedNextSteps.includes("RETURNED")) {
+    throw new Error(
+      `Cannot move order from "${order.status}" to "RETURNED". Allowed: ${
+        allowedNextSteps.join(", ") || "none"
+      }`,
+    );
+  }
+
+  const updatedOrder = await prisma.$transaction(async (t) => {
+    const rentalItems = await t.rentalItem.findMany({
+      where: { rentalOrderId: orderId },
+      include: { gearItem: true },
+    });
+
+    for (const item of rentalItems) {
+      await t.gearItem.update({
+        where: { id: item.gearItemId },
+        data: { stockQuantity: { increment: item.quantity } },
+      });
+    }
+
+    const updated = await t.rentalOrder.update({
+      where: { id: orderId },
+      data: { status: "RETURNED" },
+      include: {
+        rentalItems: { include: { gearItem: true } },
+        provider: { select: { id: true, name: true } },
+      },
+    });
+
+    return updated;
+  });
+
+  return updatedOrder;
+};
+
 export const rentalService = {
   createRental,
   getMyRentals,
   getRentalById,
   getProviderOrders,
   updateOrderStatus,
+  markOrderAsReturned,
 };

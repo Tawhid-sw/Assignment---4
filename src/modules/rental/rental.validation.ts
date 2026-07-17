@@ -96,7 +96,22 @@ const validateStatusUpdate = (
   next();
 };
 
+const validateOrderId = (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params;
+
+  if (!id || typeof id !== "string") {
+    return res.status(400).json({
+      success: false,
+      message: "Order id is required",
+      errorDetails: null,
+    });
+  }
+
+  next();
+};
+
 export const rentalValidation = {
   validateCreateRental,
   validateStatusUpdate,
+  validateOrderId,
 };

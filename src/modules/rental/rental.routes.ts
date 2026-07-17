@@ -17,4 +17,10 @@ rentalRouter.get("/", auth(Role.CUSTOMER), rentalController.getMyRentals);
 
 rentalRouter.get("/:id", auth(Role.CUSTOMER), rentalController.getRentalById);
 
+rentalRouter.patch(
+  "/:id/return",
+  auth(Role.CUSTOMER),
+  rentalController.markAsReturned,
+);
+
 export default rentalRouter;

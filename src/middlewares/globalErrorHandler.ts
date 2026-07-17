@@ -29,7 +29,7 @@ export const globalErrorHandler = (
     } else if (err.code === "P2003") {
       statusCode = httpStatus.BAD_REQUEST;
       message =
-        "This record is still referenced by other data and cannot be deleted or updated";
+        "This record is still referenced by other data and cannot be deleted";
       errorDetails = { field: err.meta?.field_name ?? null };
     } else if (err.code === "P2025") {
       statusCode = httpStatus.NOT_FOUND;
