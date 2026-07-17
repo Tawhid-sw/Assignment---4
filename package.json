@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "prisma generate && tsc && tsc-alias",
-    "postbuild": "copy api-docs.yaml dist\\api-docs.yaml",
+    "postbuild": "ncp api-docs.yaml dist/api-docs.yaml",
     "start": "node dist/server.js"
   },
   "prisma": {
@@ -33,6 +33,7 @@
     "express": "^5.2.1",
     "http-status": "^2.1.0",
     "jsonwebtoken": "^9.0.3",
+    "ncp": "^2.0.0",
     "prisma": "^7.8.0",
     "tsc-alias": "^1.9.1",
     "tsx": "^4.23.0",
