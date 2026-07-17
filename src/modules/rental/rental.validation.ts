@@ -96,8 +96,13 @@ const validateStatusUpdate = (
   next();
 };
 
-const validateOrderId = (req: Request, res: Response, next: NextFunction) => {
+const validateReturnAndReview = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const { id } = req.params;
+  const { reviews } = req.body;
 
   if (!id || typeof id !== "string") {
     return res.status(400).json({
@@ -107,11 +112,50 @@ const validateOrderId = (req: Request, res: Response, next: NextFunction) => {
     });
   }
 
+  if (!Array.isArray(reviews) || reviews.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "reviews must be a non-empty array",
+      errorDetails: null,
+    });
+  }
+
+  for (const review of reviews) {
+    if (!review.gearItemId || typeof review.gearItemId !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Each review must have a valid gearItemId",
+        errorDetails: null,
+      });
+    }
+
+    if (
+      review.rating === undefined ||
+      typeof review.rating !== "number" ||
+      review.rating < 1 ||
+      review.rating > 5
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Each review must have a rating between 1 and 5",
+        errorDetails: null,
+      });
+    }
+
+    if (review.comment !== undefined && typeof review.comment !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "comment must be a string",
+        errorDetails: null,
+      });
+    }
+  }
+
   next();
 };
 
 export const rentalValidation = {
   validateCreateRental,
   validateStatusUpdate,
-  validateOrderId,
+  validateReturnAndReview,
 };

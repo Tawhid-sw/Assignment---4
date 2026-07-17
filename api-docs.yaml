@@ -1,17 +1,19 @@
 openapi: "3.0.0"
 info:
-  title: Gear & Grit - Gear Rental API
+  title: Gear Rental API
   description: |
-    API documentation for the Gear & Grit platform - a gear rental marketplace.
-    Users can register as CUSTOMERs or PROVIDERs. Customers can browse gear, create rental orders, and make payments.
-    Providers can manage their gear inventory and fulfill orders. Admins can manage users and view all system data.
+    API documentation for the Gear Rental platform. This API allows users to register as customers or providers,
+    browse and rent gear items, manage orders, process payments, and leave reviews.
   version: "1.0.0"
   contact:
     name: API Support
+    email: support@gear-rental.com
 
 servers:
   - url: http://localhost:3000
     description: Development server
+  - url: https://your-production-url.com
+    description: Production server
 
 components:
   securitySchemes:
@@ -19,17 +21,539 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: "JWT access token. Can be provided as Bearer token in Authorization header, or as an httpOnly cookie named 'accessToken'."
+      description: Enter your access token (from login/register response) with the Bearer prefix
     CookieAuth:
       type: apiKey
       in: cookie
       name: accessToken
-      description: "JWT access token stored in httpOnly cookie. Also accepts refreshToken cookie for token refresh."
+      description: HTTP-only cookie containing the JWT access token
 
   schemas:
-    # ============================================
-    # General API Response Schemas
-    # ============================================
+    # ──────────────────────────────────────────────
+    #  Auth Schemas
+    # ──────────────────────────────────────────────
+    RegisterInput:
+      type: object
+      required: [name, email, password, role]
+      properties:
+        name:
+          type: string
+          description: Full name of the user
+          example: John Doe
+        email:
+          type: string
+          format: email
+          description: Email address
+          example: john.doe@example.com
+        password:
+          type: string
+          minLength: 6
+          description: Password (min 6 characters)
+          example: password123
+        role:
+          type: string
+          enum: [CUSTOMER, PROVIDER]
+          description: User role (ADMIN registration is forbidden)
+          example: CUSTOMER
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        password:
+          type: string
+          example: password123
+
+    UpdateProfileInput:
+      type: object
+      properties:
+        name:
+          type: string
+          description: New name (optional)
+          example: John Updated
+        avatarUrl:
+          type: string
+          format: uri
+          description: New avatar URL (optional)
+          example: https://example.com/avatar.jpg
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        avatarUrl:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum: [CUSTOMER, PROVIDER, ADMIN]
+        status:
+          type: string
+          enum: [ACTIVE, SUSPENDED]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AuthTokens:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token
+        refreshToken:
+          type: string
+          description: JWT refresh token
+        user:
+          $ref: "#/components/schemas/User"
+
+    # ──────────────────────────────────────────────
+    #  Category Schemas
+    # ──────────────────────────────────────────────
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        imageUrl:
+          type: string
+          nullable: true
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateCategoryInput:
+      type: object
+      required: [name, slug]
+      properties:
+        name:
+          type: string
+          description: Category name
+          example: Camping
+        slug:
+          type: string
+          description: URL-friendly slug
+          example: camping
+
+    UpdateCategoryInput:
+      type: object
+      required: [name, slug]
+      properties:
+        name:
+          type: string
+          example: Camping & Outdoors
+        slug:
+          type: string
+          example: camping-outdoors
+
+    # ──────────────────────────────────────────────
+    #  Gear Schemas
+    # ──────────────────────────────────────────────
+    GearItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        brand:
+          type: string
+        pricePerDay:
+          type: number
+          format: decimal
+        stockQuantity:
+          type: integer
+        isAvailable:
+          type: boolean
+        imageUrl:
+          type: string
+          nullable: true
+          format: uri
+        providerId:
+          type: string
+          format: uuid
+        categoryId:
+          type: string
+          format: uuid
+        category:
+          $ref: "#/components/schemas/Category"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateGearInput:
+      type: object
+      required: [name, description, brand, pricePerDay, categorySlug]
+      properties:
+        name:
+          type: string
+          description: Gear item name
+          example: Premium Tent
+        description:
+          type: string
+          description: Detailed description
+          example: A 4-person waterproof tent with easy setup
+        brand:
+          type: string
+          description: Brand name
+          example: Coleman
+        pricePerDay:
+          type: number
+          format: decimal
+          exclusiveMinimum: 0
+          description: Rental price per day
+          example: 25.00
+        stockQuantity:
+          type: integer
+          default: 1
+          description: Available stock quantity
+          example: 5
+        isAvailable:
+          type: boolean
+          default: true
+          description: Whether the item is available for rent
+          example: true
+        imageUrl:
+          type: string
+          format: uri
+          description: URL to item image
+          example: https://example.com/tent.jpg
+        categorySlug:
+          type: string
+          description: Slug of the category this gear belongs to
+          example: camping
+
+    UpdateGearInput:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Premium Tent V2
+        description:
+          type: string
+          example: Updated description
+        brand:
+          type: string
+          example: Coleman Pro
+        pricePerDay:
+          type: number
+          format: decimal
+          example: 30.00
+        stockQuantity:
+          type: integer
+          example: 10
+        isAvailable:
+          type: boolean
+          example: true
+        imageUrl:
+          type: string
+          format: uri
+          example: https://example.com/tent-v2.jpg
+        categorySlug:
+          type: string
+          example: camping
+
+    GearQueryParams:
+      type: object
+      properties:
+        searchTerm:
+          type: string
+          description: Search by name or description
+          example: tent
+        category:
+          type: string
+          description: Filter by category name/slug
+          example: camping
+        brand:
+          type: string
+          description: Filter by brand
+          example: Coleman
+        minPrice:
+          type: number
+          format: decimal
+          description: Minimum price per day
+          example: 10
+        maxPrice:
+          type: number
+          format: decimal
+          description: Maximum price per day
+          example: 100
+        available:
+          type: string
+          enum: ["true", "false"]
+          description: Filter by availability
+          example: "true"
+
+    # ──────────────────────────────────────────────
+    #  Rental Schemas
+    # ──────────────────────────────────────────────
+    RentalItemInput:
+      type: object
+      required: [gearItemId, quantity]
+      properties:
+        gearItemId:
+          type: string
+          format: uuid
+          description: ID of the gear item to rent
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        quantity:
+          type: integer
+          minimum: 1
+          description: Quantity to rent
+          example: 1
+
+    CreateRentalInput:
+      type: object
+      required: [startDate, endDate, items]
+      properties:
+        startDate:
+          type: string
+          format: date
+          description: Start date of rental (cannot be in the past)
+          example: "2026-07-20"
+        endDate:
+          type: string
+          format: date
+          description: End date of rental (must be after startDate)
+          example: "2026-07-25"
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/RentalItemInput"
+
+    RentalOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [PLACED, CONFIRMED, PAID, PICKED_UP, RETURNED, CANCELLED]
+          description: |
+            Order status lifecycle:
+            PLACED → CONFIRMED → PAID → PICKED_UP → RETURNED
+            CANCELLED is terminal. Reviews are submitted during RETURNED transition.
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        totalAmount:
+          type: number
+          format: decimal
+        customerId:
+          type: string
+          format: uuid
+        providerId:
+          type: string
+          format: uuid
+        rentalItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/RentalItem"
+        payment:
+          $ref: "#/components/schemas/Payment"
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RentalItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+        pricePerDay:
+          type: number
+          format: decimal
+        gearItemId:
+          type: string
+          format: uuid
+        gearItem:
+          $ref: "#/components/schemas/GearItem"
+        rentalOrderId:
+          type: string
+          format: uuid
+
+    ReturnAndReviewInput:
+      type: object
+      required: [reviews]
+      properties:
+        reviews:
+          type: array
+          minItems: 1
+          description: |
+            Reviews for each gear item in the rental order.
+            Each item in the order must be reviewed. Reviews are created atomically with the return.
+          items:
+            type: object
+            required: [gearItemId, rating]
+            properties:
+              gearItemId:
+                type: string
+                format: uuid
+                description: ID of the gear item being reviewed
+              rating:
+                type: integer
+                minimum: 1
+                maximum: 5
+                description: Rating from 1 to 5
+              comment:
+                type: string
+                description: Optional comment
+                example: Great tent, very durable!
+
+    OrderStatusUpdateInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [CONFIRMED, PAID, PICKED_UP, RETURNED, CANCELLED]
+          description: New status for the order
+
+    # ──────────────────────────────────────────────
+    #  Payment Schemas
+    # ──────────────────────────────────────────────
+    CreatePaymentInput:
+      type: object
+      required: [rentalOrderId]
+      properties:
+        rentalOrderId:
+          type: string
+          format: uuid
+          description: ID of the rental order to pay for
+          example: "550e8400-e29b-41d4-a716-446655440001"
+
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        transactionId:
+          type: string
+          nullable: true
+        gatewayRef:
+          type: string
+          nullable: true
+        amount:
+          type: number
+          format: decimal
+        provider:
+          type: string
+          enum: [STRIPE, SSLCOMMERZ]
+        method:
+          type: string
+          enum: [CARD, MOBILE_BANKING, NET_BANKING, OTHER]
+        status:
+          type: string
+          enum: [PENDING, COMPLETED, FAILED, REFUNDED]
+        paidAt:
+          type: string
+          format: date-time
+          nullable: true
+        userId:
+          type: string
+          format: uuid
+        rentalOrderId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ──────────────────────────────────────────────
+    #  Review Schemas
+    # ──────────────────────────────────────────────
+    Review:
+      type: object
+      description: Reviews are created automatically when a customer returns a rental order via PATCH /api/rentals/{id}/return
+      properties:
+        id:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+        customerId:
+          type: string
+          format: uuid
+        gearItemId:
+          type: string
+          format: uuid
+        customer:
+          $ref: "#/components/schemas/User"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ──────────────────────────────────────────────
+    #  Admin Schemas
+    # ──────────────────────────────────────────────
+    UpdateUserStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ACTIVE, SUSPENDED]
+          description: New status for the user
+
+    # ──────────────────────────────────────────────
+    #  Common Response Schemas
+    # ──────────────────────────────────────────────
     ApiResponse:
       type: object
       properties:
@@ -41,7 +565,7 @@ components:
           example: 200
         message:
           type: string
-          example: "Operation successful"
+          example: Success
         data:
           nullable: true
 
@@ -51,526 +575,35 @@ components:
         success:
           type: boolean
           example: false
+        statusCode:
+          type: integer
+          example: 400
         message:
           type: string
+          example: Bad request
         errorDetails:
           nullable: true
           type: string
 
-    # ============================================
-    # Auth Schemas
-    # ============================================
-    RegisterInput:
-      type: object
-      required:
-        - name
-        - email
-        - password
-        - role
-      properties:
-        name:
-          type: string
-          description: User's full name
-          example: "John Doe"
-        email:
-          type: string
-          format: email
-          description: User's email address
-          example: "john@example.com"
-        password:
-          type: string
-          minLength: 6
-          description: Password (minimum 6 characters)
-          example: "password123"
-        role:
-          type: string
-          enum: [CUSTOMER, PROVIDER]
-          description: User role (ADMIN registration is not allowed)
-          example: "CUSTOMER"
-
-    LoginInput:
-      type: object
-      required:
-        - email
-        - password
-      properties:
-        email:
-          type: string
-          format: email
-          example: "john@example.com"
-        password:
-          type: string
-          example: "password123"
-
-    UpdateProfileInput:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Updated name
-          example: "John Updated"
-        avatarUrl:
-          type: string
-          format: uri
-          description: Updated avatar URL
-          example: "https://example.com/avatar.jpg"
-
-    AuthUserResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          example: "clx..."
-        name:
-          type: string
-          example: "John Doe"
-        email:
-          type: string
-          example: "john@example.com"
-        role:
-          type: string
-          example: "CUSTOMER"
-        avatarUrl:
-          type: string
-          nullable: true
-
-    LoginResponseData:
-      type: object
-      properties:
-        user:
-          $ref: "#/components/schemas/AuthUserResponse"
-
-    # ============================================
-    # Category Schemas
-    # ============================================
-    Category:
-      type: object
-      properties:
-        id:
-          type: string
-          example: "clx..."
-        name:
-          type: string
-          example: "Camping"
-        slug:
-          type: string
-          example: "camping"
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-
-    CreateCategoryInput:
-      type: object
-      required:
-        - name
-        - slug
-      properties:
-        name:
-          type: string
-          example: "Camping"
-        slug:
-          type: string
-          example: "camping"
-
-    UpdateCategoryInput:
-      type: object
-      required:
-        - name
-        - slug
-      properties:
-        name:
-          type: string
-          example: "Camping Premium"
-        slug:
-          type: string
-          example: "camping-premium"
-
-    # ============================================
-    # Gear Schemas
-    # ============================================
-    GearItem:
-      type: object
-      properties:
-        id:
-          type: string
-          example: "clx..."
-        name:
-          type: string
-          example: "Tent - 4 Person"
-        description:
-          type: string
-          example: "Spacious 4-person tent with rainfly"
-        brand:
-          type: string
-          example: "Coleman"
-        pricePerDay:
-          type: number
-          format: float
-          example: 25.00
-        stockQuantity:
-          type: integer
-          example: 10
-        isAvailable:
-          type: boolean
-          example: true
-        imageUrl:
-          type: string
-          nullable: true
-          example: "https://example.com/tent.jpg"
-        categoryId:
-          type: string
-          example: "clx..."
-        providerId:
-          type: string
-          example: "clx..."
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-
-    CreateGearInput:
-      type: object
-      required:
-        - name
-        - description
-        - brand
-        - pricePerDay
-        - categorySlug
-      properties:
-        name:
-          type: string
-          example: "Tent - 4 Person"
-        description:
-          type: string
-          example: "Spacious 4-person tent with rainfly"
-        brand:
-          type: string
-          example: "Coleman"
-        pricePerDay:
-          type: number
-          format: float
-          minimum: 0.01
-          example: 25.00
-        stockQuantity:
-          type: integer
-          default: 1
-          example: 10
-        isAvailable:
-          type: boolean
-          default: true
-          example: true
-        imageUrl:
-          type: string
-          format: uri
-          example: "https://example.com/tent.jpg"
-        categorySlug:
-          type: string
-          description: "Category slug to associate the gear with"
-          example: "camping"
-
-    UpdateGearInput:
-      type: object
-      properties:
-        name:
-          type: string
-          example: "Tent - 6 Person"
-        description:
-          type: string
-          example: "Spacious 6-person tent"
-        brand:
-          type: string
-          example: "Coleman"
-        pricePerDay:
-          type: number
-          format: float
-          minimum: 0.01
-          example: 35.00
-        stockQuantity:
-          type: integer
-          example: 5
-        isAvailable:
-          type: boolean
-          example: true
-        imageUrl:
-          type: string
-          format: uri
-        categorySlug:
-          type: string
-          example: "camping"
-
-    # ============================================
-    # Rental / Order Schemas
-    # ============================================
-    RentalItem:
-      type: object
-      required:
-        - gearItemId
-        - quantity
-      properties:
-        gearItemId:
-          type: string
-          example: "clx..."
-        quantity:
-          type: integer
-          minimum: 1
-          example: 2
-
-    CreateRentalInput:
-      type: object
-      required:
-        - startDate
-        - endDate
-        - items
-      properties:
-        startDate:
-          type: string
-          format: date-time
-          description: "Rental start date (cannot be in the past)"
-          example: "2026-08-01T10:00:00Z"
-        endDate:
-          type: string
-          format: date-time
-          description: "Rental end date (must be after startDate)"
-          example: "2026-08-05T10:00:00Z"
-        items:
-          type: array
-          minItems: 1
-          items:
-            $ref: "#/components/schemas/RentalItem"
-
-    RentalOrder:
-      type: object
-      properties:
-        id:
-          type: string
-          example: "clx..."
-        customerId:
-          type: string
-          example: "clx..."
-        startDate:
-          type: string
-          format: date-time
-        endDate:
-          type: string
-          format: date-time
-        totalCost:
-          type: number
-          format: float
-          example: 150.00
-        status:
-          type: string
-          enum: [PLACED, CONFIRMED, PAID, PICKED_UP, RETURNED, CANCELLED]
-          example: "PLACED"
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        items:
-          type: array
-          items:
-            type: object
-            properties:
-              gearItemId:
-                type: string
-              quantity:
-                type: integer
-              gearItem:
-                $ref: "#/components/schemas/GearItem"
-
-    UpdateOrderStatusInput:
-      type: object
-      required:
-        - status
-      properties:
-        status:
-          type: string
-          enum: [CONFIRMED, PAID, PICKED_UP, RETURNED, CANCELLED]
-          description: "New order status"
-          example: "CONFIRMED"
-
-    # ============================================
-    # Payment Schemas
-    # ============================================
-    CreatePaymentInput:
-      type: object
-      required:
-        - rentalOrderId
-      properties:
-        rentalOrderId:
-          type: string
-          description: "ID of the rental order to pay for"
-          example: "clx..."
-
-    Payment:
-      type: object
-      properties:
-        id:
-          type: string
-          example: "clx..."
-        rentalOrderId:
-          type: string
-        customerId:
-          type: string
-        amount:
-          type: number
-          format: float
-        currency:
-          type: string
-          example: "usd"
-        status:
-          type: string
-          enum: [PENDING, COMPLETED, FAILED, REFUNDED]
-        paymentMethod:
-          type: string
-          enum: [CARD, MOBILE_BANKING, NET_BANKING, OTHER]
-        provider:
-          type: string
-          enum: [STRIPE, SSLCOMMERZ]
-        createdAt:
-          type: string
-          format: date-time
-
-    # ============================================
-    # Review Schemas
-    # ============================================
-    CreateReviewInput:
-      type: object
-      required:
-        - gearItemId
-        - rating
-      properties:
-        gearItemId:
-          type: string
-          description: "ID of the gear item being reviewed"
-          example: "clx..."
-        rating:
-          type: integer
-          minimum: 1
-          maximum: 5
-          example: 4
-        comment:
-          type: string
-          example: "Great tent, very spacious!"
-
-    Review:
-      type: object
-      properties:
-        id:
-          type: string
-        gearItemId:
-          type: string
-        customerId:
-          type: string
-        rating:
-          type: integer
-          example: 4
-        comment:
-          type: string
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-
-    # ============================================
-    # Admin Schemas
-    # ============================================
-    UpdateUserStatusInput:
-      type: object
-      required:
-        - status
-      properties:
-        status:
-          type: string
-          enum: [ACTIVE, SUSPENDED]
-          description: "New user status"
-          example: "SUSPENDED"
-
-    User:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        email:
-          type: string
-        role:
-          type: string
-          enum: [CUSTOMER, PROVIDER, ADMIN]
-        status:
-          type: string
-          enum: [ACTIVE, SUSPENDED]
-        avatarUrl:
-          type: string
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-
-  # ============================================
-  # Generic Response Patterns
-  # ============================================
-  responses:
-    SuccessResponse:
-      description: Successful operation
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ApiResponse"
-    BadRequest:
-      description: Bad request - validation error
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
-    Unauthorized:
-      description: Unauthorized - not logged in or invalid token
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
-    Forbidden:
-      description: Forbidden - insufficient permissions
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
-    NotFound:
-      description: Resource not found
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
-    ServerError:
-      description: Internal server error
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier
 
 paths:
-  # ============================================
-  # Auth Routes
-  # ============================================
+  # ═══════════════════════════════════════════════════════════
+  #  AUTH ROUTES - /api/auth
+  # ═══════════════════════════════════════════════════════════
   /api/auth/register:
     post:
-      tags:
-        - Authentication
       summary: Register a new user
-      description: |
-        Register a new user account as CUSTOMER or PROVIDER.
-        ADMIN role cannot be registered through this endpoint.
-      operationId: registerUser
+      description: Creates a new user account with CUSTOMER or PROVIDER role. ADMIN role registration is forbidden.
+      tags: [Auth]
       requestBody:
         required: true
         content:
@@ -588,23 +621,47 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/AuthUserResponse"
+                        $ref: "#/components/schemas/AuthTokens"
+              example:
+                success: true
+                statusCode: 201
+                message: User registered successfully
+                data:
+                  accessToken: "eyJhbGciOiJIUzI1NiIs..."
+                  refreshToken: "eyJhbGciOiJIUzI1NiIs..."
+                  user:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    name: John Doe
+                    email: john.doe@example.com
+                    avatarUrl: null
+                    role: CUSTOMER
+                    status: ACTIVE
+                    createdAt: "2026-07-17T15:00:00.000Z"
+                    updatedAt: "2026-07-17T15:00:00.000Z"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: Validation error (missing/invalid fields)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: ADMIN registration not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/auth/login:
     post:
-      tags:
-        - Authentication
-      summary: Login user
-      description: |
-        Authenticate a user with email and password.
-        Sets httpOnly cookies for accessToken and refreshToken.
-      operationId: loginUser
+      summary: Login a user
+      description: Authenticates a user with email and password. Returns JWT tokens and sets HTTP-only cookies.
+      tags: [Auth]
       requestBody:
         required: true
         content:
@@ -618,7 +675,7 @@ paths:
             Set-Cookie:
               schema:
                 type: string
-                description: "accessToken and refreshToken cookies set"
+                description: "Sets accessToken (24h) and refreshToken (7d) HTTP-only cookies"
           content:
             application/json:
               schema:
@@ -627,21 +684,25 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/LoginResponseData"
+                        $ref: "#/components/schemas/AuthTokens"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/auth/refresh-token:
     post:
-      tags:
-        - Authentication
       summary: Refresh access token
-      description: |
-        Refresh the access token using the refreshToken cookie.
-        Requires valid refreshToken cookie to be present.
-      operationId: refreshToken
+      description: Uses the refresh token from the HTTP-only cookie to issue a new access token.
+      tags: [Auth]
       responses:
         "200":
           description: Token refreshed successfully
@@ -649,7 +710,7 @@ paths:
             Set-Cookie:
               schema:
                 type: string
-                description: "New accessToken cookie set"
+                description: "Sets new accessToken cookie (24h)"
           content:
             application/json:
               schema:
@@ -663,17 +724,23 @@ paths:
                           accessToken:
                             type: string
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Invalid or missing refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/auth/profile:
     get:
-      tags:
-        - Authentication
-      summary: Get user profile
-      description: Retrieve the profile of the currently authenticated user.
-      operationId: getProfile
+      summary: Get authenticated user's profile
+      description: Returns the profile of the currently authenticated user.
+      tags: [Auth]
       security:
         - BearerAuth: []
         - CookieAuth: []
@@ -688,19 +755,25 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/AuthUserResponse"
+                        $ref: "#/components/schemas/User"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/auth/update-profile:
     put:
-      tags:
-        - Authentication
-      summary: Update user profile
-      description: Update the name and/or avatar URL of the currently authenticated user.
-      operationId: updateProfile
+      summary: Update authenticated user's profile
+      description: Updates the name and/or avatar URL of the currently authenticated user.
+      tags: [Auth]
       security:
         - BearerAuth: []
         - CookieAuth: []
@@ -721,24 +794,34 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/AuthUserResponse"
+                        $ref: "#/components/schemas/User"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  # ============================================
-  # Category Routes
-  # ============================================
+  # ═══════════════════════════════════════════════════════════
+  #  CATEGORY ROUTES - /api/categories
+  # ═══════════════════════════════════════════════════════════
   /api/categories:
     get:
-      tags:
-        - Categories
       summary: Get all categories
       description: Retrieve a list of all gear categories.
-      operationId: getAllCategories
+      tags: [Categories]
       responses:
         "200":
           description: Categories retrieved successfully
@@ -754,15 +837,17 @@ paths:
                         items:
                           $ref: "#/components/schemas/Category"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/categories/create-new-category:
     post:
-      tags:
-        - Categories
       summary: Create a new category
-      description: Create a new gear category. ADMIN access required.
-      operationId: createCategory
+      description: Creates a new gear category (Admin only).
+      tags: [Categories]
       security:
         - BearerAuth: []
         - CookieAuth: []
@@ -785,28 +870,37 @@ paths:
                       data:
                         $ref: "#/components/schemas/Category"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: Forbidden (Admin only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/categories/{id}:
     get:
-      tags:
-        - Categories
       summary: Get category by ID
-      description: Retrieve a single category by its ID.
-      operationId: getCategoryById
+      description: Retrieve a single category by its unique ID.
+      tags: [Categories]
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Category ID
+        - $ref: "#/components/parameters/IdParam"
       responses:
         "200":
           description: Category retrieved successfully
@@ -820,29 +914,34 @@ paths:
                       data:
                         $ref: "#/components/schemas/Category"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: Category ID is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
-          $ref: "#/components/responses/NotFound"
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/categories/update-category/{id}:
     put:
-      tags:
-        - Categories
       summary: Update a category
-      description: Update an existing category by ID. ADMIN access required.
-      operationId: updateCategory
+      description: Updates an existing category by its ID (Admin only).
+      tags: [Categories]
       security:
         - BearerAuth: []
         - CookieAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Category ID
+        - $ref: "#/components/parameters/IdParam"
       requestBody:
         required: true
         content:
@@ -862,102 +961,117 @@ paths:
                       data:
                         $ref: "#/components/schemas/Category"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
+          description: Forbidden (Admin only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/categories/delete-category/{id}:
     delete:
-      tags:
-        - Categories
       summary: Delete a category
-      description: Delete an existing category by ID. ADMIN access required.
-      operationId: deleteCategory
+      description: Deletes a category by its ID (Admin only).
+      tags: [Categories]
       security:
         - BearerAuth: []
         - CookieAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Category ID
+        - $ref: "#/components/parameters/IdParam"
       responses:
         "200":
           description: Category deleted successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiResponse"
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Category"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: Category ID is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
+          description: Forbidden (Admin only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  # ============================================
-  # Gear Routes
-  # ============================================
+  # ═══════════════════════════════════════════════════════════
+  #  GEAR ROUTES - /api/gear
+  # ═══════════════════════════════════════════════════════════
   /api/gear:
     get:
-      tags:
-        - Gear
-      summary: Get all gear items
-      description: |
-        Retrieve a list of all gear items with optional search and filter parameters.
-      operationId: getAllGear
+      summary: List all gear items
+      description: Retrieve a list of gear items with optional filtering, search, and price range.
+      tags: [Gear]
       parameters:
-        - name: searchTerm
-          in: query
-          required: false
+        - in: query
+          name: searchTerm
           schema:
             type: string
-          description: "Search term to filter gear by name/description"
-        - name: category
-          in: query
-          required: false
+          description: Search by name or description
+        - in: query
+          name: category
           schema:
             type: string
-          description: "Filter by category slug"
-        - name: brand
-          in: query
-          required: false
+          description: Filter by category name/slug
+        - in: query
+          name: brand
           schema:
             type: string
-          description: "Filter by brand name"
-        - name: minPrice
-          in: query
-          required: false
+          description: Filter by brand
+        - in: query
+          name: minPrice
           schema:
             type: number
-            format: float
-          description: "Minimum price per day"
-        - name: maxPrice
-          in: query
-          required: false
+          description: Minimum price per day
+        - in: query
+          name: maxPrice
           schema:
             type: number
-            format: float
-          description: "Maximum price per day"
-        - name: available
-          in: query
-          required: false
+          description: Maximum price per day
+        - in: query
+          name: available
           schema:
             type: string
             enum: ["true", "false"]
-          description: "Filter by availability (true/false string)"
+          description: Filter by availability
       responses:
         "200":
           description: Gear retrieved successfully
@@ -973,25 +1087,23 @@ paths:
                         items:
                           $ref: "#/components/schemas/GearItem"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  /api/gear/{id}:
+  /api/gear/provider-inventory:
     get:
-      tags:
-        - Gear
-      summary: Get gear item by ID
-      description: Retrieve a single gear item by its ID.
-      operationId: getGearById
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Gear item ID
+      summary: Get provider's inventory
+      description: Retrieve the gear inventory belonging to the authenticated provider.
+      tags: [Gear]
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
       responses:
         "200":
-          description: Gear retrieved successfully
+          description: Provider inventory retrieved successfully
           content:
             application/json:
               schema:
@@ -1000,21 +1112,33 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/GearItem"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/GearItem"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden (Provider only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/gear/create-new-gear:
     post:
-      tags:
-        - Gear
       summary: Create a new gear item
-      description: Create a new gear listing. PROVIDER access required.
-      operationId: createGear
+      description: Adds a new gear item to the provider's inventory.
+      tags: [Gear]
       security:
         - BearerAuth: []
         - CookieAuth: []
@@ -1037,31 +1161,78 @@ paths:
                       data:
                         $ref: "#/components/schemas/GearItem"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: Forbidden (Provider only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/gear/{id}:
+    get:
+      summary: Get gear item by ID
+      description: Retrieve a single gear item by its unique ID.
+      tags: [Gear]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Gear retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/GearItem"
+        "400":
+          description: Gear ID is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Gear not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/gear/update-gear/{id}:
     put:
-      tags:
-        - Gear
       summary: Update a gear item
-      description: Update an existing gear item. Only the owning PROVIDER can update.
-      operationId: updateGear
+      description: Updates a gear item in the provider's inventory. Only the owning provider can update.
+      tags: [Gear]
       security:
         - BearerAuth: []
         - CookieAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Gear item ID
+        - $ref: "#/components/parameters/IdParam"
       requestBody:
         required: true
         content:
@@ -1081,64 +1252,43 @@ paths:
                       data:
                         $ref: "#/components/schemas/GearItem"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
+          description: Forbidden (Provider only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/gear/delete-gear/{id}:
     delete:
-      tags:
-        - Gear
       summary: Delete a gear item
-      description: Delete a gear listing. Only the owning PROVIDER can delete.
-      operationId: deleteGear
+      description: Deletes a gear item from the provider's inventory. Only the owning provider can delete.
+      tags: [Gear]
       security:
         - BearerAuth: []
         - CookieAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Gear item ID
+        - $ref: "#/components/parameters/IdParam"
       responses:
         "200":
           description: Gear deleted successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/ServerError"
-
-  /api/gear/provider-inventory:
-    get:
-      tags:
-        - Gear
-      summary: Get provider's inventory
-      description: "Retrieve all gear items owned by the authenticated PROVIDER."
-      operationId: getProviderInventory
-      security:
-        - BearerAuth: []
-        - CookieAuth: []
-      responses:
-        "200":
-          description: Provider inventory retrieved successfully
           content:
             application/json:
               schema:
@@ -1147,26 +1297,40 @@ paths:
                   - type: object
                     properties:
                       data:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/GearItem"
+                        $ref: "#/components/schemas/GearItem"
+        "400":
+          description: Gear ID is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: Forbidden (Provider only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  # ============================================
-  # Rental Routes (/api/rentals)
-  # ============================================
+  # ═══════════════════════════════════════════════════════════
+  #  RENTAL ROUTES - /api/rentals
+  # ═══════════════════════════════════════════════════════════
   /api/rentals:
     post:
-      tags:
-        - Rentals
       summary: Create a rental order
-      description: "Create a new rental order with selected gear items. CUSTOMER access required."
-      operationId: createRental
+      description: Creates a new rental order for the authenticated customer.
+      tags: [Rentals]
       security:
         - BearerAuth: []
         - CookieAuth: []
@@ -1189,20 +1353,34 @@ paths:
                       data:
                         $ref: "#/components/schemas/RentalOrder"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: Forbidden (Customer only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
     get:
-      tags:
-        - Rentals
       summary: Get my rental orders
-      description: "Retrieve all rental orders for the authenticated CUSTOMER."
-      operationId: getMyRentals
+      description: Retrieve all rental orders belonging to the authenticated customer.
+      tags: [Rentals]
       security:
         - BearerAuth: []
         - CookieAuth: []
@@ -1221,29 +1399,34 @@ paths:
                         items:
                           $ref: "#/components/schemas/RentalOrder"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: Forbidden (Customer only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/rentals/{id}:
     get:
-      tags:
-        - Rentals
       summary: Get rental order by ID
-      description: "Retrieve a specific rental order by its ID. CUSTOMER access required."
-      operationId: getRentalById
+      description: Retrieve a single rental order by its ID (must belong to authenticated customer).
+      tags: [Rentals]
       security:
         - BearerAuth: []
         - CookieAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Rental order ID
+        - $ref: "#/components/parameters/IdParam"
       responses:
         "200":
           description: Rental order retrieved successfully
@@ -1257,24 +1440,106 @@ paths:
                       data:
                         $ref: "#/components/schemas/RentalOrder"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: Forbidden (Customer only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
-          $ref: "#/components/responses/NotFound"
+          description: Rental order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  # ============================================
-  # Provider Order Routes (/api/provider/orders)
-  # ============================================
+  /api/rentals/{id}/return:
+    patch:
+      summary: Return items and leave reviews
+      description: |
+        Marks a rental order as RETURNED and creates reviews atomically.
+        Requirements:
+        - Order must be in PICKED_UP status
+        - Order must have a COMPLETED payment
+        - Customer must submit at least one review
+        - Each review must be for a gear item in this order
+        - Each gear item can only be reviewed once per customer
+        Stock quantities are restored upon successful return.
+      tags: [Rentals]
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReturnAndReviewInput"
+      responses:
+        "200":
+          description: Items returned and reviewed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          order:
+                            $ref: "#/components/schemas/RentalOrder"
+                          reviews:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/Review"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden (Customer only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ═══════════════════════════════════════════════════════════
+  #  PROVIDER ORDER ROUTES - /api/provider/orders
+  # ═══════════════════════════════════════════════════════════
   /api/provider/orders:
     get:
-      tags:
-        - Provider Orders
       summary: Get provider's orders
-      description: "Retrieve all rental orders that include the authenticated PROVIDER's gear."
-      operationId: getProviderOrders
+      description: Retrieve all rental orders that include gear items belonging to the authenticated provider.
+      tags: [Provider Orders]
       security:
         - BearerAuth: []
         - CookieAuth: []
@@ -1293,37 +1558,45 @@ paths:
                         items:
                           $ref: "#/components/schemas/RentalOrder"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: Forbidden (Provider only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/provider/orders/{id}:
     patch:
-      tags:
-        - Provider Orders
       summary: Update order status
       description: |
-        Update the status of a rental order. Only the PROVIDER who owns the gear in the order can update.
-        Valid status transitions: CONFIRMED, PAID, PICKED_UP, RETURNED, CANCELLED.
-      operationId: updateOrderStatus
+        Updates the status of a rental order (Provider only).
+        Allowed transitions:
+        - PLACED → CONFIRMED or CANCELLED
+        - CONFIRMED → PAID or CANCELLED
+        Note: PAID is handled by Stripe webhook. PICKED_UP and RETURNED have dedicated endpoints.
+      tags: [Provider Orders]
       security:
         - BearerAuth: []
         - CookieAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Rental order ID
+        - $ref: "#/components/parameters/IdParam"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateOrderStatusInput"
+              $ref: "#/components/schemas/OrderStatusUpdateInput"
       responses:
         "200":
           description: Order status updated successfully
@@ -1337,26 +1610,81 @@ paths:
                       data:
                         $ref: "#/components/schemas/RentalOrder"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
+          description: Forbidden (Provider only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  # ============================================
-  # Payment Routes
-  # ============================================
+  /api/provider/orders/{id}/pickup:
+    patch:
+      summary: Mark order as picked up
+      description: |
+        Marks a rental order as PICKED_UP (Provider only).
+        Order must be in PAID status. Customer must have paid before pickup.
+      tags: [Provider Orders]
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Order pickup status updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/RentalOrder"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden (Provider only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ═══════════════════════════════════════════════════════════
+  #  PAYMENT ROUTES - /api/payments
+  # ═══════════════════════════════════════════════════════════
   /api/payments/create:
     post:
-      tags:
-        - Payments
       summary: Create a payment
-      description: "Create a payment for a rental order. CUSTOMER access required."
-      operationId: createPayment
+      description: Initiates a payment for a rental order (Customer only).
+      tags: [Payments]
       security:
         - BearerAuth: []
         - CookieAuth: []
@@ -1379,32 +1707,45 @@ paths:
                       data:
                         $ref: "#/components/schemas/Payment"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: Forbidden (Customer only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/payments/confirm:
     post:
-      tags:
-        - Payments
-      summary: "Confirm payment (Stripe webhook)"
+      summary: Confirm payment (Webhook)
       description: |
-        Stripe webhook endpoint to confirm payment.
-        Receives raw JSON body with a Stripe-Signature header for verification.
-        This endpoint uses a raw body parser (not JSON parse) for webhook signature verification.
-      operationId: confirmPayment
+        Stripe webhook endpoint that confirms payments.
+        Expects raw JSON body with a Stripe signature header.
+        On successful payment, updates order status from CONFIRMED to PAID.
+      tags: [Payments]
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              description: Stripe webhook event payload
-        description: Raw JSON body for Stripe webhook signature verification
+              description: Raw Stripe webhook event payload
       responses:
         "200":
           description: Payment confirmed successfully
@@ -1423,15 +1764,17 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/payments:
     get:
-      tags:
-        - Payments
       summary: Get my payment history
-      description: "Retrieve all payments for the authenticated CUSTOMER."
-      operationId: getMyPayments
+      description: Retrieve all payments made by the authenticated customer.
+      tags: [Payments]
       security:
         - BearerAuth: []
         - CookieAuth: []
@@ -1450,29 +1793,34 @@ paths:
                         items:
                           $ref: "#/components/schemas/Payment"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: Forbidden (Customer only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/payments/{id}:
     get:
-      tags:
-        - Payments
-      summary: Get payment details by ID
-      description: "Retrieve a specific payment by its ID. CUSTOMER access required."
-      operationId: getPaymentById
+      summary: Get payment by ID
+      description: Retrieve a single payment by its ID (must belong to authenticated customer).
+      tags: [Payments]
       security:
         - BearerAuth: []
         - CookieAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Payment ID
+        - $ref: "#/components/parameters/IdParam"
       responses:
         "200":
           description: Payment details retrieved successfully
@@ -1486,68 +1834,48 @@ paths:
                       data:
                         $ref: "#/components/schemas/Payment"
         "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/ServerError"
-
-  # ============================================
-  # Review Routes
-  # ============================================
-  /api/reviews:
-    post:
-      tags:
-        - Reviews
-      summary: Create a review
-      description: "Create a review for a gear item. CUSTOMER access required."
-      operationId: createReview
-      security:
-        - BearerAuth: []
-        - CookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateReviewInput"
-      responses:
-        "201":
-          description: Review created successfully
+          description: Not authenticated
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
-                  - type: object
-                    properties:
-                      data:
-                        $ref: "#/components/schemas/Review"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: Forbidden (Customer only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Payment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
+  # ═══════════════════════════════════════════════════════════
+  #  REVIEW ROUTES - /api/reviews
+  # ═══════════════════════════════════════════════════════════
   /api/reviews/gear/{gearItemId}:
     get:
-      tags:
-        - Reviews
       summary: Get reviews for a gear item
-      description: "Retrieve all reviews for a specific gear item. Public endpoint."
-      operationId: getReviewsForGear
+      description: |
+        Retrieve all reviews for a specific gear item by its ID.
+        Reviews are created when customers return rental orders via PATCH /api/rentals/{id}/return.
+      tags: [Reviews]
       parameters:
         - name: gearItemId
           in: path
           required: true
           schema:
             type: string
-          description: Gear item ID
+            format: uuid
+          description: ID of the gear item
       responses:
         "200":
           description: Reviews retrieved successfully
@@ -1563,18 +1891,20 @@ paths:
                         items:
                           $ref: "#/components/schemas/Review"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  # ============================================
-  # Admin Routes
-  # ============================================
+  # ═══════════════════════════════════════════════════════════
+  #  ADMIN ROUTES - /api/admin
+  # ═══════════════════════════════════════════════════════════
   /api/admin/users:
     get:
-      tags:
-        - Admin
-      summary: Get all users
-      description: "Retrieve a list of all registered users. ADMIN access required."
-      operationId: adminGetAllUsers
+      summary: Get all users (Admin)
+      description: Retrieve a list of all registered users (Admin only).
+      tags: [Admin]
       security:
         - BearerAuth: []
         - CookieAuth: []
@@ -1593,29 +1923,34 @@ paths:
                         items:
                           $ref: "#/components/schemas/User"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: Forbidden (Admin only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/admin/users/{id}:
     patch:
-      tags:
-        - Admin
-      summary: Update user status
-      description: "Update a user's status (ACTIVE or SUSPENDED). ADMIN access required."
-      operationId: adminUpdateUserStatus
+      summary: Update user status (Admin)
+      description: Activate or suspend a user account (Admin only).
+      tags: [Admin]
       security:
         - BearerAuth: []
         - CookieAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: User ID
+        - $ref: "#/components/parameters/IdParam"
       requestBody:
         required: true
         content:
@@ -1635,23 +1970,35 @@ paths:
                       data:
                         $ref: "#/components/schemas/User"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
+          description: Forbidden (Admin only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/admin/gear:
     get:
-      tags:
-        - Admin
-      summary: Get all gear listings
-      description: "Retrieve all gear listings across all providers. ADMIN access required."
-      operationId: adminGetAllGear
+      summary: Get all gear listings (Admin)
+      description: Retrieve all gear items across all providers (Admin only).
+      tags: [Admin]
       security:
         - BearerAuth: []
         - CookieAuth: []
@@ -1670,19 +2017,29 @@ paths:
                         items:
                           $ref: "#/components/schemas/GearItem"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: Forbidden (Admin only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/admin/rentals:
     get:
-      tags:
-        - Admin
-      summary: Get all rental orders
-      description: "Retrieve all rental orders across the platform. ADMIN access required."
-      operationId: adminGetAllRentals
+      summary: Get all rental orders (Admin)
+      description: Retrieve all rental orders in the system (Admin only).
+      tags: [Admin]
       security:
         - BearerAuth: []
         - CookieAuth: []
@@ -1701,8 +2058,20 @@ paths:
                         items:
                           $ref: "#/components/schemas/RentalOrder"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: Forbidden (Admin only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          $ref: "#/components/responses/ServerError"
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

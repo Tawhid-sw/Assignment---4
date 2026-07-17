@@ -12,6 +12,12 @@ type CreateRentalPayload = {
   items: RentalItemInput[];
 };
 
+type ReviewInput = {
+  gearItemId: string;
+  rating: number;
+  comment?: string;
+};
+
 type StatusMap = {
   [status: string]: string[];
 };
@@ -47,7 +53,6 @@ const createRental = async (
     throw new Error("One or more gear items do not exist");
   }
 
-  // all items must belong to the same provider
   const providerId = gearItems[0]!.providerId;
   for (const gear of gearItems) {
     if (gear.providerId !== providerId) {
@@ -55,7 +60,6 @@ const createRental = async (
     }
   }
 
-  // check stock availability and build order items + total
   let totalAmount = 0;
   const rentalItemsData = items.map((item) => {
     const gear = gearItems.find((g) => g.id === item.gearItemId);
@@ -121,7 +125,7 @@ const getMyRentals = async (customerId: string) => {
 
 const getRentalById = async (orderId: string, customerId: string) => {
   const order = await prisma.rentalOrder.findFirst({
-    where: { id: orderId, customerId }, // ownership check
+    where: { id: orderId, customerId },
     include: {
       rentalItems: { include: { gearItem: true } },
       provider: { select: { id: true, name: true } },
@@ -182,39 +186,72 @@ const updateOrderStatus = async (
   return updatedOrder;
 };
 
-const markOrderAsReturned = async (orderId: string, customerId: string) => {
+// RETURN + REVIEW together — atomic transaction
+const returnAndReview = async (
+  orderId: string,
+  customerId: string,
+  reviews: ReviewInput[],
+) => {
   const order = await prisma.rentalOrder.findFirst({
     where: { id: orderId, customerId },
+    include: {
+      payment: true,
+      rentalItems: { include: { gearItem: true } },
+    },
   });
 
   if (!order) {
     throw new Error("Rental order not found");
   }
 
-  const allowedNextSteps = ALLOWED_TRANSITIONS[order.status] || [];
-
-  if (!allowedNextSteps.includes("RETURNED")) {
-    throw new Error(
-      `Cannot move order from "${order.status}" to "RETURNED". Allowed: ${
-        allowedNextSteps.join(", ") || "none"
-      }`,
-    );
+  if (!order.payment || order.payment.status !== "COMPLETED") {
+    throw new Error("Order must be paid before it can be returned");
   }
 
-  const updatedOrder = await prisma.$transaction(async (t) => {
-    const rentalItems = await t.rentalItem.findMany({
-      where: { rentalOrderId: orderId },
-      include: { gearItem: true },
-    });
+  if (order.status !== "PICKED_UP") {
+    throw new Error(
+      `Cannot return order from "${order.status}". Order must be PICKED_UP first.`,
+    );
+  }
+  const orderGearIds = order.rentalItems.map((ri) => ri.gearItemId);
 
-    for (const item of rentalItems) {
+  if (!Array.isArray(reviews) || reviews.length === 0) {
+    throw new Error("At least one review is required when returning items");
+  }
+
+  for (const review of reviews) {
+    if (!orderGearIds.includes(review.gearItemId)) {
+      throw new Error(
+        `Gear item "${review.gearItemId}" is not part of this rental order`,
+      );
+    }
+    if (review.rating < 1 || review.rating > 5) {
+      throw new Error("Rating must be between 1 and 5");
+    }
+  }
+
+  // Check for duplicate reviews
+  const existingReviews = await prisma.review.findMany({
+    where: {
+      customerId,
+      gearItemId: { in: reviews.map((r) => r.gearItemId) },
+    },
+  });
+
+  if (existingReviews.length > 0) {
+    const reviewedIds = existingReviews.map((r) => r.gearItemId).join(", ");
+    throw new Error(`You have already reviewed: ${reviewedIds}`);
+  }
+
+  const result = await prisma.$transaction(async (t) => {
+    for (const item of order.rentalItems) {
       await t.gearItem.update({
         where: { id: item.gearItemId },
         data: { stockQuantity: { increment: item.quantity } },
       });
     }
 
-    const updated = await t.rentalOrder.update({
+    const updatedOrder = await t.rentalOrder.update({
       where: { id: orderId },
       data: { status: "RETURNED" },
       include: {
@@ -223,10 +260,23 @@ const markOrderAsReturned = async (orderId: string, customerId: string) => {
       },
     });
 
-    return updated;
+    const createdReviews = await Promise.all(
+      reviews.map((review) =>
+        t.review.create({
+          data: {
+            rating: review.rating,
+            comment: review.comment,
+            customerId,
+            gearItemId: review.gearItemId,
+          },
+        }),
+      ),
+    );
+
+    return { order: updatedOrder, reviews: createdReviews };
   });
 
-  return updatedOrder;
+  return result;
 };
 
 export const rentalService = {
@@ -235,5 +285,5 @@ export const rentalService = {
   getRentalById,
   getProviderOrders,
   updateOrderStatus,
-  markOrderAsReturned,
+  returnAndReview,
 };

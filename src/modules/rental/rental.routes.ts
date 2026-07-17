@@ -20,7 +20,8 @@ rentalRouter.get("/:id", auth(Role.CUSTOMER), rentalController.getRentalById);
 rentalRouter.patch(
   "/:id/return",
   auth(Role.CUSTOMER),
-  rentalController.markAsReturned,
+  rentalValidation.validateReturnAndReview,
+  rentalController.returnAndReview,
 );
 
 export default rentalRouter;

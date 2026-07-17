@@ -69,17 +69,18 @@ const updateOrderStatus = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const markAsReturned = catchAsync(async (req: Request, res: Response) => {
+const returnAndReview = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
   const customerId = req.user!.id;
+  const { reviews } = req.body;
 
-  const order = await rentalService.markOrderAsReturned(id, customerId);
+  const result = await rentalService.returnAndReview(id, customerId, reviews);
 
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
-    message: "Order marked as returned successfully",
-    data: order,
+    message: "Items returned and reviewed successfully",
+    data: result,
   });
 });
 
@@ -89,5 +90,5 @@ export const rentalController = {
   getRentalById,
   getProviderOrders,
   updateOrderStatus,
-  markAsReturned,
+  returnAndReview,
 };
