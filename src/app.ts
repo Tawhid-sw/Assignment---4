@@ -1,50 +1,49 @@
-import express, {
-  type Application,
-  type Request,
-  type Response,
-} from "express";
 import cookieParser from "cookie-parser";
-import authRouter from "./modules/auth/auth.routes";
+import cors from "cors";
+import express, {
+	type Application,
+	type Request,
+	type Response,
+} from "express";
+import fs from "fs";
+import { load } from "js-yaml";
+import path from "path";
+import { config } from "./config";
 import { globalErrorHandler } from "./middlewares/globalErrorHandler";
 import { notFound } from "./middlewares/notFound";
-import cors from "cors";
-import { config } from "./config";
+import adminRouter from "./modules/admin/admin.routes";
+import authRouter from "./modules/auth/auth.routes";
 import categoryRouter from "./modules/category/category.routes";
 import gearRouter from "./modules/gear/gear.routes";
-import rentalRouter from "./modules/rental/rental.routes";
-import providerOrderRouter from "./modules/rental/provider-order.routes";
 import paymentRouter from "./modules/payment/payment.routes";
+import providerOrderRouter from "./modules/rental/provider-order.routes";
+import rentalRouter from "./modules/rental/rental.routes";
 import reviewRouter from "./modules/review/review.routes";
-import adminRouter from "./modules/admin/admin.routes";
-
-import { load } from "js-yaml";
-import fs from "fs";
-import path from "path";
 
 const app: Application = express();
 
 app.use(
-  cors({
-    origin: config.APP_URL,
-    credentials: true,
-  }),
+	cors({
+		origin: config.APP_URL,
+		credentials: true,
+	}),
 );
 
 app.use("/api/payments/confirm", express.raw({ type: "application/json" }));
 
 // Load API spec
 const swaggerDocument = load(
-  fs.readFileSync(path.join(process.cwd(), "api-docs.yaml"), "utf8"),
+	fs.readFileSync(path.join(process.cwd(), "api-docs.yaml"), "utf8"),
 ) as object;
 
 // Serve spec as JSON endpoint
 app.get("/api-docs.json", (req: Request, res: Response) => {
-  res.json(swaggerDocument);
+	res.json(swaggerDocument);
 });
 
 // Serve Swagger UI with CDN assets
 app.get("/api-docs", (req: Request, res: Response) => {
-  res.send(`
+	res.send(`
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -81,7 +80,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+	res.send("Hello World!");
 });
 
 app.use("/api/auth", authRouter);

@@ -1,28 +1,28 @@
 import express from "express";
-import { auth } from "../../middlewares/auth.middleware";
 import { Role } from "../../../generated/prisma/enums";
+import { auth } from "../../middlewares/auth.middleware";
 import { rentalController } from "../rental/rental.controller";
 import { rentalValidation } from "../rental/rental.validation";
 
 const providerOrderRouter = express.Router();
 
 providerOrderRouter.get(
-  "/",
-  auth(Role.PROVIDER),
-  rentalController.getProviderOrders,
+	"/",
+	auth(Role.PROVIDER),
+	rentalController.getProviderOrders,
 );
 
 providerOrderRouter.patch(
-  "/:id",
-  auth(Role.PROVIDER),
-  rentalValidation.validateStatusUpdate,
-  rentalController.updateOrderStatus,
+	"/:id",
+	auth(Role.PROVIDER),
+	rentalValidation.validateStatusUpdate,
+	rentalController.updateOrderStatus,
 );
 
 providerOrderRouter.patch(
-  "/:id/pickup",
-  auth(Role.PROVIDER),
-  rentalController.updateOrderStatus,
+	"/:id/pickup",
+	auth(Role.PROVIDER),
+	rentalController.markPickedUp,
 );
 
 export default providerOrderRouter;
