@@ -1,161 +1,159 @@
-import type { Request, Response, NextFunction } from "express";
+import type { NextFunction, Request, Response } from "express";
 
 const validateCreateRental = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
+	req: Request,
+	res: Response,
+	next: NextFunction,
 ) => {
-  const { startDate, endDate, items } = req.body;
+	const { startDate, endDate, items } = req.body;
 
-  if (!startDate || !endDate) {
-    return res.status(400).json({
-      success: false,
-      message: "startDate and endDate are required",
-      errorDetails: null,
-    });
-  }
+	if (!startDate || !endDate) {
+		return res.status(400).json({
+			success: false,
+			message: "startDate and endDate are required",
+			errorDetails: null,
+		});
+	}
 
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+	const start = new Date(startDate);
+	const end = new Date(endDate);
 
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    return res.status(400).json({
-      success: false,
-      message: "startDate and endDate must be valid dates",
-      errorDetails: null,
-    });
-  }
+	if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+		return res.status(400).json({
+			success: false,
+			message: "startDate and endDate must be valid dates",
+			errorDetails: null,
+		});
+	}
 
-  if (start >= end) {
-    return res.status(400).json({
-      success: false,
-      message: "endDate must be after startDate",
-      errorDetails: null,
-    });
-  }
+	if (start >= end) {
+		return res.status(400).json({
+			success: false,
+			message: "endDate must be after startDate",
+			errorDetails: null,
+		});
+	}
 
-  const today = new Date(new Date().toDateString());
-  if (start < today) {
-    return res.status(400).json({
-      success: false,
-      message: "startDate cannot be in the past",
-      errorDetails: null,
-    });
-  }
+	const today = new Date(new Date().toDateString());
+	if (start < today) {
+		return res.status(400).json({
+			success: false,
+			message: "startDate cannot be in the past",
+			errorDetails: null,
+		});
+	}
 
-  if (!Array.isArray(items) || items.length === 0) {
-    return res.status(400).json({
-      success: false,
-      message: "items must be a non-empty array",
-      errorDetails: null,
-    });
-  }
+	if (!Array.isArray(items) || items.length === 0) {
+		return res.status(400).json({
+			success: false,
+			message: "items must be a non-empty array",
+			errorDetails: null,
+		});
+	}
 
-  for (const item of items) {
-    if (!item.gearItemId || typeof item.gearItemId !== "string") {
-      return res.status(400).json({
-        success: false,
-        message: "Each item must have a valid gearItemId",
-        errorDetails: null,
-      });
-    }
-    if (!item.quantity || item.quantity < 1) {
-      return res.status(400).json({
-        success: false,
-        message: "Each item must have a quantity of at least 1",
-        errorDetails: null,
-      });
-    }
-  }
+	for (const item of items) {
+		if (!item.gearItemId || typeof item.gearItemId !== "string") {
+			return res.status(400).json({
+				success: false,
+				message: "Each item must have a valid gearItemId",
+				errorDetails: null,
+			});
+		}
+		if (typeof item.quantity !== "number" || item.quantity < 1) {
+			return res.status(400).json({
+				success: false,
+				message: "Each item must have a quantity of at least 1",
+				errorDetails: null,
+			});
+		}
+	}
 
-  next();
+	next();
 };
 
 const validateStatusUpdate = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
+	req: Request,
+	res: Response,
+	next: NextFunction,
 ) => {
-  const { status } = req.body;
-  const validStatuses = [
-    "CONFIRMED",
-    "PAID",
-    "PICKED_UP",
-    "RETURNED",
-    "CANCELLED",
-  ];
+	const { status } = req.body;
+	const validStatuses = [
+		"CONFIRMED",
+		"PAID",
+		"PICKED_UP",
+		"RETURNED",
+		"CANCELLED",
+	];
 
-  if (!status || !validStatuses.includes(status)) {
-    return res.status(400).json({
-      success: false,
-      message: `status must be one of: ${validStatuses.join(", ")}`,
-      errorDetails: null,
-    });
-  }
+	if (!status || !validStatuses.includes(status)) {
+		return res.status(400).json({
+			success: false,
+			message: `status must be one of: ${validStatuses.join(", ")}`,
+			errorDetails: null,
+		});
+	}
 
-  next();
+	next();
 };
 
 const validateReturnAndReview = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
+	req: Request,
+	res: Response,
+	next: NextFunction,
 ) => {
-  const { id } = req.params;
-  const { reviews } = req.body;
+	const { id } = req.params;
+	const { reviews } = req.body;
 
-  if (!id || typeof id !== "string") {
-    return res.status(400).json({
-      success: false,
-      message: "Order id is required",
-      errorDetails: null,
-    });
-  }
+	if (!id || typeof id !== "string") {
+		return res.status(400).json({
+			success: false,
+			message: "Order id is required",
+			errorDetails: null,
+		});
+	}
 
-  if (!Array.isArray(reviews) || reviews.length === 0) {
-    return res.status(400).json({
-      success: false,
-      message: "reviews must be a non-empty array",
-      errorDetails: null,
-    });
-  }
+	if (!Array.isArray(reviews) || reviews.length === 0) {
+		return res.status(400).json({
+			success: false,
+			message: "reviews must be a non-empty array",
+			errorDetails: null,
+		});
+	}
 
-  for (const review of reviews) {
-    if (!review.gearItemId || typeof review.gearItemId !== "string") {
-      return res.status(400).json({
-        success: false,
-        message: "Each review must have a valid gearItemId",
-        errorDetails: null,
-      });
-    }
+	for (const review of reviews) {
+		if (!review.gearItemId || typeof review.gearItemId !== "string") {
+			return res.status(400).json({
+				success: false,
+				message: "Each review must have a valid gearItemId",
+				errorDetails: null,
+			});
+		}
+		if (
+			review.rating === undefined ||
+			typeof review.rating !== "number" ||
+			review.rating < 1 ||
+			review.rating > 5
+		) {
+			return res.status(400).json({
+				success: false,
+				message: "Each review must have a rating between 1 and 5",
+				errorDetails: null,
+			});
+		}
+		if (review.comment !== undefined && typeof review.comment !== "string") {
+			return res.status(400).json({
+				success: false,
+				message: "comment must be a string",
+				errorDetails: null,
+			});
+		}
+	}
 
-    if (
-      review.rating === undefined ||
-      typeof review.rating !== "number" ||
-      review.rating < 1 ||
-      review.rating > 5
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Each review must have a rating between 1 and 5",
-        errorDetails: null,
-      });
-    }
-
-    if (review.comment !== undefined && typeof review.comment !== "string") {
-      return res.status(400).json({
-        success: false,
-        message: "comment must be a string",
-        errorDetails: null,
-      });
-    }
-  }
-
-  next();
+	next();
 };
 
 export const rentalValidation = {
-  validateCreateRental,
-  validateStatusUpdate,
-  validateReturnAndReview,
+	validateCreateRental,
+	validateStatusUpdate,
+	validateReturnAndReview,
 };

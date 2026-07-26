@@ -1,24 +1,24 @@
-import type { Request, Response, NextFunction } from "express";
+import type { NextFunction, Request, Response } from "express";
 
 const validateUserStatusUpdate = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
+	req: Request,
+	res: Response,
+	next: NextFunction,
 ) => {
-  const { status } = req.body;
-  const validStatuses = ["ACTIVE", "SUSPENDED"];
+	const { status } = req.body;
+	const validStatuses = ["ACTIVE", "SUSPENDED"];
 
-  if (!status || !validStatuses.includes(status)) {
-    return res.status(400).json({
-      success: false,
-      message: `status must be one of: ${validStatuses.join(", ")}`,
-      errorDetails: null,
-    });
-  }
+	if (!status || !validStatuses.includes(status)) {
+		return res.status(400).json({
+			success: false,
+			message: `status must be one of: ${validStatuses.join(", ")}`,
+			errorDetails: null,
+		});
+	}
 
-  next();
+	next();
 };
 
 export const adminValidation = {
-  validateUserStatusUpdate,
+	validateUserStatusUpdate,
 };

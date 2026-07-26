@@ -1,102 +1,104 @@
-import type { Request, Response, NextFunction } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { Role } from "../../../generated/prisma/enums";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const validateRegister = (req: Request, res: Response, next: NextFunction) => {
-  const { name, email, password, role } = req.body;
+	const { name, email, password, role } = req.body;
 
-  if (!name || typeof name !== "string") {
-    return res.status(400).json({
-      success: false,
-      message: "name is required",
-      errorDetails: null,
-    });
-  }
+	if (!name || typeof name !== "string") {
+		return res.status(400).json({
+			success: false,
+			message: "name is required",
+			errorDetails: null,
+		});
+	}
 
-  if (!email || typeof email !== "string") {
-    return res.status(400).json({
-      success: false,
-      message: "email is required",
-      errorDetails: null,
-    });
-  }
+	if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email)) {
+		return res.status(400).json({
+			success: false,
+			message: "A valid email is required",
+			errorDetails: null,
+		});
+	}
 
-  if (!password || typeof password !== "string" || password.length < 6) {
-    return res.status(400).json({
-      success: false,
-      message: "password must be at least 6 characters",
-      errorDetails: null,
-    });
-  }
+	if (!password || typeof password !== "string" || password.length < 6) {
+		return res.status(400).json({
+			success: false,
+			message: "password must be at least 6 characters",
+			errorDetails: null,
+		});
+	}
 
-  if (role === Role.ADMIN) {
-    return res.status(403).json({
-      success: false,
-      message: "You are not allowed to register as ADMIN",
-      errorDetails: null,
-    });
-  }
+	if (role === Role.ADMIN) {
+		return res.status(403).json({
+			success: false,
+			message: "You are not allowed to register as ADMIN",
+			errorDetails: null,
+		});
+	}
 
-  next();
+	next();
 };
 
 const validateLogin = (req: Request, res: Response, next: NextFunction) => {
-  const { email, password } = req.body;
+	const { email, password } = req.body;
 
-  if (!email || typeof email !== "string") {
-    return res.status(400).json({
-      success: false,
-      message: "email is required",
-      errorDetails: null,
-    });
-  }
+	if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email)) {
+		return res.status(400).json({
+			success: false,
+			message: "A valid email is required",
+			errorDetails: null,
+		});
+	}
 
-  if (!password || typeof password !== "string") {
-    return res.status(400).json({
-      success: false,
-      message: "password is required",
-      errorDetails: null,
-    });
-  }
+	if (!password || typeof password !== "string") {
+		return res.status(400).json({
+			success: false,
+			message: "password is required",
+			errorDetails: null,
+		});
+	}
 
-  next();
+	next();
 };
 
 const validateUpdateProfile = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
+	req: Request,
+	res: Response,
+	next: NextFunction,
 ) => {
-  const { name, avatarUrl } = req.body;
+	const { name, avatarUrl } = req.body;
 
-  if (!name && !avatarUrl) {
-    return res.status(400).json({
-      success: false,
-      message: "At least one of name or avatarUrl is required",
-      errorDetails: null,
-    });
-  }
+	if (!name && !avatarUrl) {
+		return res.status(400).json({
+			success: false,
+			message: "At least one of name or avatarUrl is required",
+			errorDetails: null,
+		});
+	}
 
-  if (name !== undefined && typeof name !== "string") {
-    return res.status(400).json({
-      success: false,
-      message: "name must be a string",
-      errorDetails: null,
-    });
-  }
+	if (name !== undefined && typeof name !== "string") {
+		return res.status(400).json({
+			success: false,
+			message: "name must be a string",
+			errorDetails: null,
+		});
+	}
 
-  if (avatarUrl !== undefined && typeof avatarUrl !== "string") {
-    return res.status(400).json({
-      success: false,
-      message: "avatarUrl must be a string",
-      errorDetails: null,
-    });
-  }
+	if (avatarUrl !== undefined && typeof avatarUrl !== "string") {
+		return res.status(400).json({
+			success: false,
+			message: "avatarUrl must be a string",
+			errorDetails: null,
+		});
+	}
 
-  next();
+	next();
 };
 
 export const authValidation = {
-  validateRegister,
-  validateLogin,
-  validateUpdateProfile,
+	validateRegister,
+	validateLogin,
+	validateUpdateProfile,
 };
