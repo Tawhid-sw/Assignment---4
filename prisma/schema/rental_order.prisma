@@ -16,6 +16,7 @@ model rentalOrder {
 
   rentalItems rentalItem[]
   payment     payment?
+  review      review[]
 
   @@map("rental_orders")
 }
