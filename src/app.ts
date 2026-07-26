@@ -56,6 +56,7 @@ app.get("/api-docs", (req: Request, res: Response) => {
   <script>
     window.onload = function() {
       SwaggerUIBundle({
+        url: "/api-docs.json",
         dom_id: "#swagger-ui",
         deepLinking: true,
         presets: [
