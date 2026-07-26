@@ -31,12 +31,10 @@ app.use(
 
 app.use("/api/payments/confirm", express.raw({ type: "application/json" }));
 
-// Load API spec
 const swaggerDocument = load(
 	fs.readFileSync(path.join(process.cwd(), "api-docs.yaml"), "utf8"),
 ) as object;
 
-// Serve spec as JSON endpoint
 app.get("/api-docs.json", (req: Request, res: Response) => {
 	res.json(swaggerDocument);
 });
@@ -58,7 +56,6 @@ app.get("/api-docs", (req: Request, res: Response) => {
   <script>
     window.onload = function() {
       SwaggerUIBundle({
-        url: "/api-docs.json",
         dom_id: "#swagger-ui",
         deepLinking: true,
         presets: [
